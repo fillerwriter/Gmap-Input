@@ -12,10 +12,10 @@
   var map;
 
   $(document).ready(function(){
-     $('body').gmapInput();
+     $('.wkt').gmapInput();
    });
   
-
+/*
   function initialize() {
     var chicago = new google.maps.LatLng(41.879535, -87.624333);
     var myOptions = {
@@ -41,7 +41,7 @@
   /**
    * Handles click events on a map, and adds a new point to the Polyline.
    * @param {MouseEvent} mouseEvent
-   */
+   *
   function addLatLng(event) {
 
     var path = poly.getPath();
@@ -56,11 +56,13 @@
       title: '#' + path.getLength(),
       map: map
     });
-  }
+  }*/
 
 </script>
 </head>
-<body onload="initialize()">
-  <div id="map_canvas" style="width: 500px; height: 500px"></div>
+<body class="test">
+  <form>
+    <input class="wkt" type="text" />
+  </form>
 </body>
 </html>
