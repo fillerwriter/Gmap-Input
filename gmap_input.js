@@ -119,11 +119,11 @@
 
     // Data structure happens here.
     /**
-     * Data structures.
+     * Data structures. (http://geojson.org/geojson-spec.html)
      *  - value
      *    - [
      *      'type': (point/line/poly)
-     *      'points': [
+     *      'coordinates': [
      *        (array of objects, lat/lon)
      *      ],
      *    ]
@@ -131,7 +131,10 @@
     $('.control', drawControlContainer).data({
       'mapState': MAP_STATE_PANNING,
       'drawType': DRAW_POINT,
-      'value': [], // Internal data.
+      'value': {
+        "type": "GeometryCollection",
+        "geometries": []
+      },
       'currentDrawObject': undefined,
       'currentValueID': 0, // which item in value are we targeting at the moment?
       'options': options
@@ -191,24 +194,20 @@
         data.currentDrawObject = new google.maps.Polygon(polyOptions);
         data.currentDrawObject.setMap(map);
 
-        data.currentValueID = data.value.length;
+        data.currentValueID = data.value.geometries.length;
 
-        data.value[data.currentValueID] = {
-          type: 'polygon',
-          points: new Array()
+        data.value.geometries[data.currentValueID] = {
+          type: 'Polygon',
+          coordinates: new Array()
         }
-        
-        
+
       }
       var path = data.currentDrawObject.getPath();
       path.push(event.latLng);
 
-      data.value[data.currentValueID].points.push({
-        lat: event.latLng.lat(),
-        lon: event.latLng.lng()
-      });
-      
-      $('textarea').val(outputWKT(data.value));
+      data.value.geometries[data.currentValueID].coordinates.push([event.latLng.lat(), event.latLng.lng()]);
+
+      $('textarea').val(JSON.stringify(data.value));
     },
     // Doubleclick
     mapdoubleclick: function (event, data) {
@@ -223,22 +222,5 @@
       widgetProcessors.polygon.mapclick(event, data);
     }
   };
-  
-  function outputWKT(data) {
-    var output = '';
-    for (i in data) {
-      switch (data[i]['type']) {
-        case 'polygon':
-          var segment = new Array();
-          output += 'POLYGON ((';
-          for (j in data[i].points) {
-            segment.push(data[i].points[j].lat + ' ' + data[i].points[j]['lon']);
-          }
-          output += segment.toString();
-          output += '))';
-        break;
-      }
-    }
-    return output;
-  }
+
 })( jQuery );
