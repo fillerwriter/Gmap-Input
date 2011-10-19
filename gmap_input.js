@@ -65,7 +65,11 @@
   }
 
   GmapInput.prototype.init = function () {
-	var $this = this;
+    var $this = this;
+    this.options.mapState = MAP_STATE_PANNING;
+    this.options.currentFeatureType = DRAW_POINT;
+    this.options.dblClickTimer = undefined;
+
     this._mapcontainer = $(this.element).after('<div class="gmapInputMap"></div>').siblings('.gmapInputMap').get(0);
     var start = new google.maps.LatLng(this.options.startPoint.lat, this.options.startPoint.lon);
     var mapOptions = {
@@ -87,9 +91,6 @@
       $this.click(e);
     });
 
-	this.options.mapState = MAP_STATE_PANNING;
-	this.options.currentFeatureType = DRAW_POINT;
-	
     poly = new google.maps.Polygon(polyOptions);
     poly.setMap(this._map);
 
