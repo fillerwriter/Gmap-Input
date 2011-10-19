@@ -1,4 +1,4 @@
-/*!
+/*
  * jQuery lightweight plugin boilerplate
  * Original author: @ajpiano
  * Further changes, comments: @addyosmani
@@ -56,6 +56,7 @@
     // is generally empty because we don't want to alter
     // the default options for future instances of the plugin
     this.options = $.extend( {}, defaults, options) ;
+    this.data = new GmapJSON();
 
     this._defaults = defaults;
     this._name = pluginName;
@@ -68,6 +69,7 @@
     var $this = this;
     this.options.mapState = MAP_STATE_PANNING;
     this.options.currentFeatureType = DRAW_POINT;
+    this.options.currentOverlay = undefined;
     this.options.dblClickTimer = undefined;
 
     this._mapcontainer = $(this.element).after('<div class="gmapInputMap"></div>').siblings('.gmapInputMap').get(0);
@@ -79,20 +81,10 @@
       disableDoubleClickZoom: true
     };
 
-    var polyOptions = {
-      strokeColor: '#FFCC66',
-      fillColor: '#FFCC66',
-      strokeOpacity: 1.0,
-      strokeWeight: 3
-    };
-
     this._map = new google.maps.Map(this._mapcontainer, mapOptions);
     google.maps.event.addListener(this._map, 'click', function(e) {
       $this.click(e);
     });
-
-    poly = new google.maps.Polygon(polyOptions);
-    poly.setMap(this._map);
 
     var drawControlContainer = document.createElement('DIV');
     var list = $('<ul>').addClass('control').css({
@@ -108,16 +100,35 @@
     
     drawControlContainer.innerHTML = drawControl.html();
     this._map.controls[google.maps.ControlPosition.TOP_RIGHT].push(drawControlContainer);
-
-
-    // TMP TEST INFO
-    var internalData = new GmapJSON();
-    internalData.addFeature('Polygon');
-    internalData.addCoordinate(40, 20);
-    internalData.addCoordinate(50, 30);
-    internalData.addFeature('Point');
-    internalData.addCoordinate(30, 50);
-    $(this.element).val(internalData.stringify());
+    
+    $('li', drawControlContainer).click(function () {
+      if ($this.options.mapState == MAP_STATE_PANNING) {
+        $this.options.mapState = MAP_STATE_DRAWING;
+        $(this).css('background-color', '#F00');
+        switch ($(this).text()) {
+          case 'Draw Point':
+            $this.options.currentFeatureType = DRAW_POINT;
+          break;
+          case 'Draw Line':
+            $this.options.currentFeatureType = DRAW_LINE;
+          break;
+          case 'Draw Polygon':
+            $this.options.currentFeatureType = DRAW_POLY;
+          break;
+          case 'Draw Bounds':
+            $this.options.currentFeatureType = DRAW_BOUNDS;
+          break;
+        }
+      } else {
+        $this.options.mapState = MAP_STATE_PANNING;
+        $(this).parent().find('li').css('background-color', '#FFF');
+      }
+      alert($this.options.mapState);
+    });
+    
+    $('.dropdown', drawControlContainer).click(function () {
+      
+    });
   };
 
   // Returns map object.
@@ -127,18 +138,87 @@
 
   // General click callback.
   GmapInput.prototype.click = function (e) {
-    alert(this.options.mapState);
+    if (this.options.mapState = MAP_STATE_DRAWING) {
+      switch (this.options.currentFeatureType) {
+        case DRAW_POINT:
+          this.drawPoint(e);
+        break;
+        case DRAW_LINE:
+          this.drawLine(e);
+        break;
+        case DRAW_POLY:
+          this.drawPolygon(e);
+        break;
+        case DRAW_BOUNDS:
+          // @TODO: Add bounds response.
+        break;
+      }
+    }
   }
 
   // General doubleclick callback.
-  GmapInput.prototype.doubleclick = function () {
+  GmapInput.prototype.doubleclick = function (e) {
     
   }
 
-  // Switch drawing setting to polygon drawing
-  GmapInput.prototype.startPolygon = function () {
-    
+  // Switch drawing setting to point drawing
+  GmapInput.prototype.drawPoint = function (e) {
+    var marker = new google.maps.Marker({
+      position: e.latLng,
+      map: this._map
+    });
+    this.data.addFeature('Point');
+    this.data.addCoordinate(e.latLng.lat(), e.latLng.lng());
+    $(this.element).val(this.data.stringify());
   }
+
+  // Switch drawing setting to line drawing
+  GmapInput.prototype.drawLine = function (e) {
+    if (this.options.currentOverlay == undefined) {
+      var lineOptions = {
+        strokeColor: '#FFCC66',
+        strokeOpacity: 1.0,
+        strokeWeight: 3
+      };
+
+      this.options.currentOverlay = new google.maps.Polyline(lineOptions);
+      this.options.currentOverlay.setMap(this._map);
+      
+      this.data.addFeature('LineString');
+    }
+    
+    var path = this.options.currentOverlay.getPath();
+    path.push(e.latLng);
+    
+    this.data.addCoordinate(e.latLng.lat(), e.latLng.lng());
+    $(this.element).val(this.data.stringify());
+  }
+
+  // Switch drawing setting to polygon drawing
+  GmapInput.prototype.drawPolygon = function (e) {
+    if (this.options.currentOverlay == undefined) {
+      var polyOptions = {
+        strokeColor: '#FFCC66',
+        fillColor: '#FFCC66',
+        strokeOpacity: 1.0,
+        strokeWeight: 3
+      };
+
+      this.options.currentOverlay = new google.maps.Polygon(polyOptions);
+      this.options.currentOverlay.setMap(this._map);
+      
+      this.data.addFeature('Polygon');
+    }
+    
+    var path = this.options.currentOverlay.getPath();
+    path.push(e.latLng);
+    
+    this.data.addCoordinate(e.latLng.lat(), e.latLng.lng());
+    $(this.element).val(this.data.stringify());
+  }
+
+
+
 
 
 
@@ -203,7 +283,16 @@
 
   // stringify. Returns a string based on internal data.
   GmapJSON.prototype.stringify = function() {
-    return JSON.stringify(this.data);
+    if (this.data.length == 0) {
+      return '';
+    } else if (this.data.length == 1) {
+      return JSON.stringify(this.data[0]);
+    } else {
+      return JSON.stringify({
+        type: "GeometryCollection",
+        geometries: this.data
+      });
+    }
   }
 
   // A really lightweight plugin wrapper around the constructor,
@@ -219,212 +308,3 @@
 
 })( jQuery, window, document );
 
-/*(function( $ ){
-  var optionDefaults = {
-    
-  };
-  
-  var dblClickTimer = undefined;
-
-  $.fn.gmapInput = function(optionOverrides) {
-    var items = $(this);
-
-    items.each(function(index, element) {
-      var options = optionDefaults;
-      
-      if (optionOverrides) {
-        $.extend(options, optionOverrides);
-      }
-
-      var map_id = 'mapinput_' + index;
-      var map_container = $('<div>').attr('id', map_id).attr('style', 'width: 500px; height: 500px');
-      $(element).after(map_container);
-      
-      var start = new google.maps.LatLng(options.startPoint.lat, options.startPoint.lon);
-      var myOptions = {
-        zoom: options.startPoint.zoom,
-        center: start,
-        mapTypeId: google.maps.MapTypeId.ROADMAP,
-        disableDoubleClickZoom: true
-      };
-
-      map = new google.maps.Map(document.getElementById(map_id), myOptions);
-
-      // Generates control
-      generateControl(map, options);
-
-      // 'Global' states
-      var mapState = MAP_STATE_PANNING;
-      var drawType = DRAW_POINT;
-
-      var polyOptions = {
-        strokeColor: '#FFCC66',
-        fillColor: '#FFCC66',
-        strokeOpacity: 1.0,
-        strokeWeight: 3
-      };
-
-      poly = new google.maps.Polygon(polyOptions);
-      poly.setMap(map);
-
-      google.maps.event.addListener(map, 'click', mapClickHandler);
-      google.maps.event.addListener(map, 'dblclick', mapDblClickHandler);
-      google.maps.event.addListener(map, 'rightclick', mapDblClickHandler);
-      $(document).keydown(function(event) {
-        var data = $('.control').data();
-        if (event.which == 46 && data.currentDrawObject != undefined) {
-          data.currentDrawObject.setMap(null);
-          data.currentDrawObject = undefined;
-        }
-      });
-    });
-  };
-
-  function mapClickHandler(event) {
-    dblClickTimer = setTimeout(function() {mapClickHandlerPostTimer(event);}, 200);
-  }
-
-  function mapClickHandlerPostTimer(event) {
-    var data = $('.control').data();
-    if (data.mapState == MAP_STATE_DRAWING) {
-      switch (data.drawType) {
-        case DRAW_POLY:
-          widgetProcessors.polygon.mapclick(event, data);
-        break;
-      }
-    }
-  }
-
-  function mapDblClickHandler(event) {
-    clearTimeout(dblClickTimer);
-    var data = $('.control').data();
-    widgetProcessors.polygon.mapdoubleclick(event, data);
-  }
-
-  /**
-   * Generates the dropdown widget.
-   *
-
-  function generateControl(map, options) {
-    var drawControlContainer = document.createElement('DIV');
-    var list = $('<ul>').addClass('control').css({
-      'background-color': '#FFF',
-      'list-style': 'none',
-      'padding-left': 0,
-      'font-family': '"Helvetica", sans-serif',
-      'font-size': '0.8em'
-    })
-      .html('<li>Draw Point</li><li>Draw Line</li><li>Draw Polygon</li><li>Draw Bounds</li>');
-
-    var drawControl = $('<div>').append(list).append('<div class="dropdown">expand</div>');
-    
-    drawControlContainer.innerHTML = drawControl.html();
-    map.controls[google.maps.ControlPosition.TOP_RIGHT].push(drawControlContainer);
-
-    // Data structure happens here.
-    /**
-     * Data structures. (http://geojson.org/geojson-spec.html)
-     *  - value
-     *    - [
-     *      'type': (point/line/poly)
-     *      'coordinates': [
-     *        (array of objects, lat/lon)
-     *      ],
-     *    ]
-     *
-    $('.control', drawControlContainer).data({
-      'mapState': MAP_STATE_PANNING,
-      'drawType': DRAW_POINT,
-      'value': {
-        "type": "GeometryCollection",
-        "geometries": []
-      },
-      'currentDrawObject': undefined,
-      'currentValueID': 0, // which item in value are we targeting at the moment?
-      'options': options
-    });
-
-    $('li', drawControlContainer).click(function() {
-      var data = $(this).parents('.control').data();
-      
-      $(this).parents('.control').find('li').css('background-color', '#FFF');
-
-      switch ($(this).text()) {
-        case 'Draw Point':
-          data.drawType = DRAW_POINT;
-        break;
-        case 'Draw Line':
-          data.drawType = DRAW_LINE;
-        break;
-        case 'Draw Polygon':
-          data.drawType = DRAW_POLY;
-        break;
-        case 'Draw Bounds':
-          data.drawType = DRAW_BOUNDS;
-        break;
-      }
-      
-      if (data.mapState == MAP_STATE_PANNING) {
-        data.mapState = MAP_STATE_DRAWING;
-        $(this).css('background-color', '#F00');
-      }
-      else {
-        data.mapState = MAP_STATE_PANNING;
-      }
-    });
-  }
-
-  /**
-   * Widget Processor object holds all the code for handling click events for our map.
-   *
-   * Features have many different event handlers
-   *  - mapclick
-   *  - mapdoubleclick
-   *  - featureclick
-   **
-  var widgetProcessors = new Object();
-
-  widgetProcessors.polygon = {
-    // click
-    mapclick: function(event, data) {
-      if (data.currentDrawObject == undefined) {
-        var polyOptions = {
-          strokeColor: '#FFCC66',
-          fillColor: '#FFCC66',
-          strokeOpacity: 1.0,
-          strokeWeight: 3
-        };
-
-        data.currentDrawObject = new google.maps.Polygon(polyOptions);
-        data.currentDrawObject.setMap(map);
-
-        data.currentValueID = data.value.geometries.length;
-
-        data.value.geometries[data.currentValueID] = {
-          type: 'Polygon',
-          coordinates: new Array()
-        }
-
-      }
-      var path = data.currentDrawObject.getPath();
-      path.push(event.latLng);
-
-      data.value.geometries[data.currentValueID].coordinates.push([event.latLng.lat(), event.latLng.lng()]);
-
-      $('textarea').val(JSON.stringify(data.value));
-    },
-    // Doubleclick
-    mapdoubleclick: function (event, data) {
-      if (data.currentDrawObject != undefined) {
-        google.maps.event.addListener(data.currentDrawObject, 'click', function(event) {
-          widgetProcessors.polygon.featureclick(event, data);
-        });
-        data.currentDrawObject = undefined;
-      }
-    },
-    featureclick: function (event, data) {
-      widgetProcessors.polygon.mapclick(event, data);
-    }
-  };
-
-})( jQuery );*/
