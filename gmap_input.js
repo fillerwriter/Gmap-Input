@@ -65,6 +65,7 @@
   }
 
   GmapInput.prototype.init = function () {
+	var $this = this;
     this._mapcontainer = $(this.element).after('<div class="gmapInputMap"></div>').siblings('.gmapInputMap').get(0);
     var start = new google.maps.LatLng(this.options.startPoint.lat, this.options.startPoint.lon);
     var mapOptions = {
@@ -83,10 +84,12 @@
 
     this._map = new google.maps.Map(this._mapcontainer, mapOptions);
     google.maps.event.addListener(this._map, 'click', function(e) {
-      var path = poly.getPath();
-      path.push(e.latLng);
+      $this.click(e);
     });
 
+	this.options.mapState = MAP_STATE_PANNING;
+	this.options.currentFeatureType = DRAW_POINT;
+	
     poly = new google.maps.Polygon(polyOptions);
     poly.setMap(this._map);
 
@@ -122,8 +125,8 @@
   }
 
   // General click callback.
-  GmapInput.prototype.click = function () {
-    
+  GmapInput.prototype.click = function (e) {
+    alert(this.options.mapState);
   }
 
   // General doubleclick callback.
