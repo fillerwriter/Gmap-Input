@@ -102,32 +102,46 @@
     this._map.controls[google.maps.ControlPosition.TOP_RIGHT].push(drawControlContainer);
     
     $('li', drawControlContainer).click(function () {
-      if ($this.options.mapState == MAP_STATE_PANNING) {
-        $this.options.mapState = MAP_STATE_DRAWING;
-        $(this).css('background-color', '#F00');
-        switch ($(this).text()) {
-          case 'Draw Point':
-            $this.options.currentFeatureType = DRAW_POINT;
-          break;
-          case 'Draw Line':
-            $this.options.currentFeatureType = DRAW_LINE;
-          break;
-          case 'Draw Polygon':
-            $this.options.currentFeatureType = DRAW_POLY;
-          break;
-          case 'Draw Bounds':
-            $this.options.currentFeatureType = DRAW_BOUNDS;
-          break;
+      var draw_options = new Object();
+      draw_options[DRAW_POINT] = 'Draw Point';
+      draw_options[DRAW_LINE] = 'Draw Line';
+      draw_options[DRAW_POLY] = 'Draw Polygon';
+      draw_options[DRAW_BOUNDS] = 'Draw Bounds';
+
+      $(this).parent().find('li').css('background-color', '#FFF');
+
+      if ($(this).text() == draw_options[$this.options.currentFeatureType]) {
+        if ($this.options.mapState == MAP_STATE_DRAWING) {
+          $this.options.mapState = MAP_STATE_PANNING;
+        } else {
+          $this.options.mapState = MAP_STATE_DRAWING;
+          $(this).css('background-color', '#F00');
         }
       } else {
-        $this.options.mapState = MAP_STATE_PANNING;
-        $(this).parent().find('li').css('background-color', '#FFF');
+        $this.options.mapState = MAP_STATE_DRAWING;
+        $(this).css('background-color', '#F00');
       }
-      alert($this.options.mapState);
+
+      switch ($(this).text()) {
+        case 'Draw Point':
+          $this.options.currentFeatureType = DRAW_POINT;
+        break;
+        case 'Draw Line':
+          $this.options.currentFeatureType = DRAW_LINE;
+        break;
+        case 'Draw Polygon':
+          $this.options.currentFeatureType = DRAW_POLY;
+        break;
+        case 'Draw Bounds':
+          $this.options.currentFeatureType = DRAW_BOUNDS;
+        break;
+      }
+      
+      $this.options.currentOverlay = undefined;
     });
     
     $('.dropdown', drawControlContainer).click(function () {
-      
+      // @TODO: Add dropdown widget
     });
   };
 
@@ -137,22 +151,27 @@
   }
 
   // General click callback.
-  GmapInput.prototype.click = function (e) {
-    if (this.options.mapState = MAP_STATE_DRAWING) {
-      switch (this.options.currentFeatureType) {
-        case DRAW_POINT:
-          this.drawPoint(e);
-        break;
-        case DRAW_LINE:
-          this.drawLine(e);
-        break;
-        case DRAW_POLY:
-          this.drawPolygon(e);
-        break;
-        case DRAW_BOUNDS:
-          // @TODO: Add bounds response.
-        break;
+  GmapInput.prototype.click = function (e, feature, featureType) {
+    if (feature == undefined) {
+      if (this.options.mapState == MAP_STATE_DRAWING) {
+        switch (this.options.currentFeatureType) {
+          case DRAW_POINT:
+            this.drawPoint(e);
+          break;
+          case DRAW_LINE:
+            this.drawLine(e);
+          break;
+          case DRAW_POLY:
+            this.drawPolygon(e);
+          break;
+          case DRAW_BOUNDS:
+            // @TODO: Add bounds response.
+          break;
+        }
       }
+    } else {
+      // Panning mode + a polygon == select a polygon.
+      alert("CLICKED A " + featureType);
     }
   }
 
@@ -163,10 +182,16 @@
 
   // Switch drawing setting to point drawing
   GmapInput.prototype.drawPoint = function (e) {
+    $this = this;
     var marker = new google.maps.Marker({
       position: e.latLng,
       map: this._map
     });
+    
+    google.maps.event.addListener(marker, 'click', function(e) {
+      $this.click(e, this, 'Point');
+    });
+    
     this.data.addFeature('Point');
     this.data.addCoordinate(e.latLng.lat(), e.latLng.lng());
     $(this.element).val(this.data.stringify());
@@ -174,6 +199,7 @@
 
   // Switch drawing setting to line drawing
   GmapInput.prototype.drawLine = function (e) {
+    $this = this;
     if (this.options.currentOverlay == undefined) {
       var lineOptions = {
         strokeColor: '#FFCC66',
@@ -183,6 +209,10 @@
 
       this.options.currentOverlay = new google.maps.Polyline(lineOptions);
       this.options.currentOverlay.setMap(this._map);
+      
+      google.maps.event.addListener(this.options.currentOverlay, 'click', function(e) {
+        $this.click(e, this, 'Line');
+      });
       
       this.data.addFeature('LineString');
     }
@@ -196,6 +226,7 @@
 
   // Switch drawing setting to polygon drawing
   GmapInput.prototype.drawPolygon = function (e) {
+    $this = this;
     if (this.options.currentOverlay == undefined) {
       var polyOptions = {
         strokeColor: '#FFCC66',
@@ -206,7 +237,11 @@
 
       this.options.currentOverlay = new google.maps.Polygon(polyOptions);
       this.options.currentOverlay.setMap(this._map);
-      
+
+      google.maps.event.addListener(this.options.currentOverlay, 'click', function(e) {
+        $this.click(e, this, 'Polygon');
+      });
+
       this.data.addFeature('Polygon');
     }
     
