@@ -91,14 +91,46 @@
       'background-color': '#FFF',
       'list-style': 'none',
       'padding-left': 0,
+      'float': 'left',
       'font-family': '"Helvetica", sans-serif',
-      'font-size': '0.8em'
+      'font-size': '0.8em',
+      'margin': 0
     })
-      .html('<li>Draw Point</li><li>Draw Line</li><li>Draw Polygon</li><li>Draw Bounds</li>');
+      .html('<ul class="current"><li>Draw Point</li></ul><ul class="options"><li>Draw Line</li><li>Draw Polygon</li><li>Draw Bounds</li></ul>');
 
-    var drawControl = $('<div>').append(list).append('<div class="dropdown">expand</div>');
+    var drawControl = $('<div>').append(list).append('<div class="dropdown">expand</div>').css({
+      'background': '#FFF',
+      'border': '1px solid #CCC',
+      'cursor': 'pointer',
+      'box-shadow': '1px 1px 2px #999',
+      'margin': '5px 5px 0 0',
+      'padding': '3px',
+      'overflow': 'hidden'
+    });
+    $('.dropdown', drawControl).css({
+      'background': 'url(' + this.options.imagePath + '/dropdown.png) center center no-repeat',
+      'border-left': '1px solid #000',
+      'cursor': 'pointer',
+      'display': 'block',
+      'float': 'left',
+      'height': '11px',
+      'text-indent': '-9999px',
+      'width': '16px'
+    });
+
+    $('ul', drawControl).css({
+      'list-style': 'none',
+      'margin': 0,
+      'padding': 0
+    });
     
-    drawControlContainer.innerHTML = drawControl.html();
+    $('li', drawControl).css({
+      'width': '7em'
+    });
+
+    $('.options', drawControl).hide();
+
+    drawControlContainer = drawControl.get(0);
     this._map.controls[google.maps.ControlPosition.TOP_RIGHT].push(drawControlContainer);
     
     $('li', drawControlContainer).click(function () {
@@ -108,18 +140,27 @@
       draw_options[DRAW_POLY] = 'Draw Polygon';
       draw_options[DRAW_BOUNDS] = 'Draw Bounds';
 
-      $(this).parent().find('li').css('background-color', '#FFF');
+      $(this).parent().find('li').css({
+        'background-color': '#FFF',
+        'color': '#000'
+      });
 
       if ($(this).text() == draw_options[$this.options.currentFeatureType]) {
         if ($this.options.mapState == MAP_STATE_DRAWING) {
           $this.options.mapState = MAP_STATE_PANNING;
         } else {
           $this.options.mapState = MAP_STATE_DRAWING;
-          $(this).css('background-color', '#F00');
+          $(this).css({
+            'background-color': '#7895d7',
+            'color': '#FFF'
+          });
         }
       } else {
         $this.options.mapState = MAP_STATE_DRAWING;
-        $(this).css('background-color', '#F00');
+        $(this).css({
+          'background-color': '#7895d7',
+          'color': '#FFF'
+        });
       }
 
       switch ($(this).text()) {
@@ -141,7 +182,7 @@
     });
     
     $('.dropdown', drawControlContainer).click(function () {
-      // @TODO: Add dropdown widget
+      $('.options').slideToggle('medium');
     });
   };
 
