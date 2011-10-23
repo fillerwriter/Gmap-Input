@@ -1,8 +1,9 @@
 /*
- * jQuery lightweight plugin boilerplate
+ * Gmap Input
+ * Original author: @fillerwriter
  * Original author: @ajpiano
  * Further changes, comments: @addyosmani
- * Licensed under the MIT license
+ * Licensed under the GPL license
  */
 
 // the semi-colon before the function invocation is a safety
@@ -184,6 +185,14 @@
     $('.dropdown', drawControlContainer).click(function () {
       $('.options').slideToggle('medium');
     });
+    
+    // TMP. Load values from textarea/field into map. This probably needs to be 
+    // integrated into regular CRUD functionality.
+    alert($(this.element).val());
+    if ($(this.element).val() != '') {
+      var myData = JSON.parse($(this.element).val());
+      
+    }
   };
 
   // Returns map object.
