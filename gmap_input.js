@@ -97,6 +97,7 @@
           
           if (myData.type == "GeometryCollection") {
             for (var i in myData.geometries) {
+              alert("DATA LOAD: " + i + " " + myData.geometries[i].type);
               switch (myData.geometries[i].type) {
                 case 'Point':
                   this.drawPoint(myData.geometries[i].coordinates);
@@ -244,10 +245,18 @@
             this.drawPoint(new Array(e.latLng.lat(), e.latLng.lng()));
           break;
           case DRAW_LINE:
-            this.drawLine(new Array(new Array(e.latLng.lat(), e.latLng.lng())));
+            if (this.options.currentOverlay == undefined) {
+              this.drawLine(new Array(new Array(e.latLng.lat(), e.latLng.lng())));
+            } else {
+              this.appendPoint(new Array(e.latLng.lat(), e.latLng.lng()));
+            }
           break;
           case DRAW_POLY:
-            this.drawPolygon(new Array(new Array(e.latLng.lat(), e.latLng.lng())));
+            if (this.options.currentOverlay == undefined) {
+              this.drawPolygon(new Array(new Array(e.latLng.lat(), e.latLng.lng())));
+            } else {
+              this.appendPoint(new Array(e.latLng.lat(), e.latLng.lng()));
+            }
           break;
           case DRAW_BOUNDS:
             // @TODO: Add bounds response.
@@ -285,22 +294,20 @@
   // Switch drawing setting to line drawing
   GmapInput.prototype.drawLine = function (coordinates) {
     $this = this;
-    if (this.options.currentOverlay == undefined) {
-      var lineOptions = {
-        strokeColor: '#FFCC66',
-        strokeOpacity: 1.0,
-        strokeWeight: 3
-      };
+    var lineOptions = {
+      strokeColor: '#FFCC66',
+      strokeOpacity: 1.0,
+      strokeWeight: 3
+    };
 
-      this.options.currentOverlay = new google.maps.Polyline(lineOptions);
-      this.options.currentOverlay.setMap(this._map);
-      
-      google.maps.event.addListener(this.options.currentOverlay, 'click', function(e) {
-        $this.click(e, this, 'Line');
-      });
-      
-      this.data.addFeature('LineString');
-    }
+    this.options.currentOverlay = new google.maps.Polyline(lineOptions);
+    this.options.currentOverlay.setMap(this._map);
+    
+    google.maps.event.addListener(this.options.currentOverlay, 'click', function(e) {
+      $this.click(e, this, 'Line');
+    });
+    
+    this.data.addFeature('LineString');
 
     for (var i in coordinates) {
       this.appendPoint(coordinates[i]);
@@ -310,24 +317,22 @@
   // Switch drawing setting to polygon drawing
   GmapInput.prototype.drawPolygon = function (coordinates) {
     $this = this;
-    if (this.options.currentOverlay == undefined) {
-      var polyOptions = {
-        strokeColor: '#FFCC66',
-        fillColor: '#FFCC66',
-        strokeOpacity: 1.0,
-        strokeWeight: 3
-      };
+    var polyOptions = {
+      strokeColor: '#FFCC66',
+      fillColor: '#FFCC66',
+      strokeOpacity: 1.0,
+      strokeWeight: 3
+    };
 
-      this.options.currentOverlay = new google.maps.Polygon(polyOptions);
-      this.options.currentOverlay.setMap(this._map);
+    this.options.currentOverlay = new google.maps.Polygon(polyOptions);
+    this.options.currentOverlay.setMap(this._map);
 
-      google.maps.event.addListener(this.options.currentOverlay, 'click', function(e) {
-        $this.click(e, this, 'Polygon');
-      });
+    google.maps.event.addListener(this.options.currentOverlay, 'click', function(e) {
+      $this.click(e, this, 'Polygon');
+    });
 
-      this.data.addFeature('Polygon');
-    }
-    
+    this.data.addFeature('Polygon');
+
     for (var i in coordinates) {
       this.appendPoint(coordinates[i]);
     }
@@ -374,6 +379,7 @@
       "type": featureType,
       "coordinates": []
     };
+    alert("ADD FEATURE: " + this._currentFeature + ": " + this.data[this._currentFeature].type);
     return this._currentFeature;
   }
   
