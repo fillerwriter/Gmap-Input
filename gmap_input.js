@@ -96,7 +96,19 @@
           this.data.loadGeoJSON(myData);
           
           if (myData.type == "GeometryCollection") {
-            
+            for (var i in myData.geometries) {
+              switch (myData.geometries[i].type) {
+                case 'Point':
+                  this.drawPoint(myData.geometries[i].coordinates);
+                break;
+                case 'LineString':
+                  this.drawLine(myData.geometries[i].coordinates);
+                break;
+                case 'Polygon':
+                  this.drawPolygon(myData.geometries[i].coordinates);
+                break;
+              }
+            }
           } else {
             switch (myData.type) {
               case 'Point':
@@ -172,7 +184,7 @@
       draw_options[DRAW_POLY] = 'Draw Polygon';
       draw_options[DRAW_BOUNDS] = 'Draw Bounds';
 
-      $(this).parent().find('li').css({
+      $(this).parent().parent().find('li').css({
         'background-color': '#FFF',
         'color': '#000'
       });
@@ -388,8 +400,11 @@
     if (featurePos == undefined) {
       featurePos = this._currentFeature;
     }
-    
-    this.data[featurePos].coordinates.push([lat, lon]);
+    if (this.data[featurePos].type == 'Point') {
+      this.data[featurePos].coordinates = [lat, lon];
+    } else {
+      this.data[featurePos].coordinates.push([lat, lon]);
+    }
   }
   
   // remove coordinate
