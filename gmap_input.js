@@ -86,6 +86,37 @@
     google.maps.event.addListener(this._map, 'click', function(e) {
       $this.click(e);
     });
+    
+    // TMP. Load values from textarea/field into map. This probably needs to be 
+    // integrated into regular CRUD functionality.
+    if ($(this.element).val() != '') {
+      try {
+        var myData = jQuery.parseJSON($(this.element).val());
+        if (myData) {
+          this.data.loadGeoJSON(myData);
+          
+          if (myData.type == "GeometryCollection") {
+            
+          } else {
+            switch (myData.type) {
+              case 'Point':
+                this.drawPoint(myData.coordinates);
+              break;
+              case 'LineString':
+                this.drawLine(myData.coordinates);
+              break;
+              case 'Polygon':
+                this.drawPolygon(myData.coordinates);
+              break;
+            }
+          }
+        }
+      } catch(e) {
+      }
+    }
+
+    // reset back to no current polygon if we've loaded data
+    this.options.currentOverlay = undefined;
 
     var drawControlContainer = document.createElement('DIV');
     var list = $('<ul>').addClass('control').css({
@@ -185,14 +216,6 @@
     $('.dropdown', drawControlContainer).click(function () {
       $('.options').slideToggle('medium');
     });
-    
-    // TMP. Load values from textarea/field into map. This probably needs to be 
-    // integrated into regular CRUD functionality.
-    alert($(this.element).val());
-    if ($(this.element).val() != '') {
-      var myData = JSON.parse($(this.element).val());
-      
-    }
   };
 
   // Returns map object.
@@ -206,13 +229,13 @@
       if (this.options.mapState == MAP_STATE_DRAWING) {
         switch (this.options.currentFeatureType) {
           case DRAW_POINT:
-            this.drawPoint(e);
+            this.drawPoint(new Array(e.latLng.lat(), e.latLng.lng()));
           break;
           case DRAW_LINE:
-            this.drawLine(e);
+            this.drawLine(new Array(new Array(e.latLng.lat(), e.latLng.lng())));
           break;
           case DRAW_POLY:
-            this.drawPolygon(e);
+            this.drawPolygon(new Array(new Array(e.latLng.lat(), e.latLng.lng())));
           break;
           case DRAW_BOUNDS:
             // @TODO: Add bounds response.
@@ -231,10 +254,10 @@
   }
 
   // Switch drawing setting to point drawing
-  GmapInput.prototype.drawPoint = function (e) {
+  GmapInput.prototype.drawPoint = function (coordinate) {
     $this = this;
     var marker = new google.maps.Marker({
-      position: e.latLng,
+      position: new google.maps.LatLng(coordinate[0], coordinate[1]),
       map: this._map
     });
     
@@ -243,12 +266,12 @@
     });
     
     this.data.addFeature('Point');
-    this.data.addCoordinate(e.latLng.lat(), e.latLng.lng());
+    this.data.addCoordinate(coordinate[0], coordinate[1]);
     $(this.element).val(this.data.stringify());
   }
 
   // Switch drawing setting to line drawing
-  GmapInput.prototype.drawLine = function (e) {
+  GmapInput.prototype.drawLine = function (coordinates) {
     $this = this;
     if (this.options.currentOverlay == undefined) {
       var lineOptions = {
@@ -266,16 +289,14 @@
       
       this.data.addFeature('LineString');
     }
-    
-    var path = this.options.currentOverlay.getPath();
-    path.push(e.latLng);
-    
-    this.data.addCoordinate(e.latLng.lat(), e.latLng.lng());
-    $(this.element).val(this.data.stringify());
+
+    for (var i in coordinates) {
+      this.appendPoint(coordinates[i]);
+    }
   }
 
   // Switch drawing setting to polygon drawing
-  GmapInput.prototype.drawPolygon = function (e) {
+  GmapInput.prototype.drawPolygon = function (coordinates) {
     $this = this;
     if (this.options.currentOverlay == undefined) {
       var polyOptions = {
@@ -295,15 +316,21 @@
       this.data.addFeature('Polygon');
     }
     
-    var path = this.options.currentOverlay.getPath();
-    path.push(e.latLng);
-    
-    this.data.addCoordinate(e.latLng.lat(), e.latLng.lng());
-    $(this.element).val(this.data.stringify());
+    for (var i in coordinates) {
+      this.appendPoint(coordinates[i]);
+    }
   }
 
+  // Add coordinate to current feature. Really only applicable to lines and polygons
+  GmapInput.prototype.appendPoint = function(coordinate) {
+    if (this.options.currentOverlay != undefined) {
+      var path = this.options.currentOverlay.getPath();
+      path.push(new google.maps.LatLng(coordinate[0], coordinate[1]));
 
-
+      this.data.addCoordinate(coordinate[0], coordinate[1]);
+      $(this.element).val(this.data.stringify());
+    }
+  }
 
 
 
@@ -317,6 +344,15 @@
   
   // init function
   GmapJSON.prototype.init = function() {
+  }
+
+  // Load valid GeoJSON. Takes an GeoJSON object.
+  GmapJSON.prototype.loadGeoJSON = function(newData) {
+    if (newData.type == 'GeometryCollection') {
+      this.data = newData.geometries;
+    } else {
+      this.data = new Array(newData);
+    }
   }
 
   // add feature
@@ -377,6 +413,20 @@
         type: "GeometryCollection",
         geometries: this.data
       });
+    }
+  }
+
+  // Get. Returns a GeoJSON object with current data.
+  GmapJSON.prototype.get = function() {
+    if (this.data.length == 0) {
+      return undefined;
+    } else if (this.data.length == 1) {
+      return this.data[0];
+    } else {
+      return {
+        type: "GeometryCollection",
+        geometries: this.data
+      };
     }
   }
 
