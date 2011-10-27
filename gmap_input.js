@@ -1,9 +1,8 @@
 /*
  * Gmap Input
  * Original author: @fillerwriter
- * Original author: @ajpiano
- * Further changes, comments: @addyosmani
  * Licensed under the GPL license
+ * jQuery boilerplate provided by @ajpiano, @addyosmani
  */
 
 // the semi-colon before the function invocation is a safety
@@ -86,9 +85,12 @@
     google.maps.event.addListener(this._map, 'click', function(e) {
       $this.click(e);
     });
-    
-    // TMP. Load values from textarea/field into map. This probably needs to be 
-    // integrated into regular CRUD functionality.
+
+    google.maps.event.addListener(this._map, 'dblclick', function(e) {
+      $this.doubleclick(e);
+    });
+
+    // Load data from element's value.
     if ($(this.element).val() != '') {
       try {
         var myData = jQuery.parseJSON($(this.element).val());
@@ -97,7 +99,6 @@
           
           if (myData.type == "GeometryCollection") {
             for (var i in myData.geometries) {
-              alert("DATA LOAD: " + i + " " + myData.geometries[i].type);
               switch (myData.geometries[i].type) {
                 case 'Point':
                   this.drawPoint(myData.geometries[i].coordinates);
@@ -145,7 +146,7 @@
 
     var drawControl = $('<div>').append(list).append('<div class="dropdown">expand</div>').css({
       'background': '#FFF',
-      'border': '1px solid #CCC',
+      'border': '1px solid #7895d7',
       'cursor': 'pointer',
       'box-shadow': '1px 1px 2px #999',
       'margin': '5px 5px 0 0',
@@ -168,7 +169,7 @@
       'margin': 0,
       'padding': 0
     });
-    
+
     $('li', drawControl).css({
       'width': '7em'
     });
@@ -177,7 +178,7 @@
 
     drawControlContainer = drawControl.get(0);
     this._map.controls[google.maps.ControlPosition.TOP_RIGHT].push(drawControlContainer);
-    
+
     $('li', drawControlContainer).click(function () {
       var draw_options = new Object();
       draw_options[DRAW_POINT] = 'Draw Point';
@@ -222,10 +223,10 @@
           $this.options.currentFeatureType = DRAW_BOUNDS;
         break;
       }
-      
+
       $this.options.currentOverlay = undefined;
     });
-    
+
     $('.dropdown', drawControlContainer).click(function () {
       $('.options').slideToggle('medium');
     });
@@ -238,40 +239,47 @@
 
   // General click callback.
   GmapInput.prototype.click = function (e, feature, featureType) {
-    if (feature == undefined) {
-      if (this.options.mapState == MAP_STATE_DRAWING) {
-        switch (this.options.currentFeatureType) {
-          case DRAW_POINT:
-            this.drawPoint(new Array(e.latLng.lat(), e.latLng.lng()));
-          break;
-          case DRAW_LINE:
-            if (this.options.currentOverlay == undefined) {
-              this.drawLine(new Array(new Array(e.latLng.lat(), e.latLng.lng())));
-            } else {
-              this.appendPoint(new Array(e.latLng.lat(), e.latLng.lng()));
-            }
-          break;
-          case DRAW_POLY:
-            if (this.options.currentOverlay == undefined) {
-              this.drawPolygon(new Array(new Array(e.latLng.lat(), e.latLng.lng())));
-            } else {
-              this.appendPoint(new Array(e.latLng.lat(), e.latLng.lng()));
-            }
-          break;
-          case DRAW_BOUNDS:
-            // @TODO: Add bounds response.
-          break;
-        }
+    if (this.options.mapState == MAP_STATE_DRAWING) {
+      switch (this.options.currentFeatureType) {
+        case DRAW_POINT:
+          this.drawPoint(new Array(e.latLng.lat(), e.latLng.lng()));
+        break;
+        case DRAW_LINE:
+          if (this.options.currentOverlay == undefined) {
+            this.drawLine(new Array(new Array(e.latLng.lat(), e.latLng.lng())));
+          } else {
+            this.appendPoint(new Array(e.latLng.lat(), e.latLng.lng()));
+          }
+        break;
+        case DRAW_POLY:
+          if (this.options.currentOverlay == undefined) {
+            this.drawPolygon(new Array(new Array(e.latLng.lat(), e.latLng.lng())));
+          } else {
+            this.appendPoint(new Array(e.latLng.lat(), e.latLng.lng()));
+          }
+        break;
+        case DRAW_BOUNDS:
+          // @TODO: Add bounds response.
+        break;
       }
     } else {
-      // Panning mode + a polygon == select a polygon.
-      alert("CLICKED A " + featureType);
+      if (feature != undefined) {
+        // Panning mode + a polygon == select a polygon.
+        // @TODO: Create way to select/deselect items.
+        var polyOptions = {
+          strokeColor: '#FF0000',
+          fillColor: '#FFCC66',
+          strokeOpacity: 1.0,
+          strokeWeight: 3
+        };
+        feature.setOptions(polyOptions);
+      }
     }
   }
 
   // General doubleclick callback.
-  GmapInput.prototype.doubleclick = function (e) {
-    
+  GmapInput.prototype.doubleclick = function (e, feature, featureType) {
+    alert("HI");
   }
 
   // Switch drawing setting to point drawing
@@ -281,11 +289,15 @@
       position: new google.maps.LatLng(coordinate[0], coordinate[1]),
       map: this._map
     });
-    
+
     google.maps.event.addListener(marker, 'click', function(e) {
       $this.click(e, this, 'Point');
     });
-    
+
+    google.maps.event.addListener(marker, 'dblclick', function(e) {
+      $this.doubleclick(e, this, 'Point');
+    });
+
     this.data.addFeature('Point');
     this.data.addCoordinate(coordinate[0], coordinate[1]);
     $(this.element).val(this.data.stringify());
@@ -302,11 +314,15 @@
 
     this.options.currentOverlay = new google.maps.Polyline(lineOptions);
     this.options.currentOverlay.setMap(this._map);
-    
+
     google.maps.event.addListener(this.options.currentOverlay, 'click', function(e) {
       $this.click(e, this, 'Line');
     });
-    
+
+    google.maps.event.addListener(this.options.currentOverlay, 'dblclick', function(e) {
+      $this.doubleclick(e, this, 'Line');
+    });
+
     this.data.addFeature('LineString');
 
     for (var i in coordinates) {
@@ -329,6 +345,10 @@
 
     google.maps.event.addListener(this.options.currentOverlay, 'click', function(e) {
       $this.click(e, this, 'Polygon');
+    });
+
+    google.maps.event.addListener(this.options.currentOverlay, 'dblclick', function(e) {
+      $this.doubleclick(e, this, 'Polygon');
     });
 
     this.data.addFeature('Polygon');
@@ -379,7 +399,6 @@
       "type": featureType,
       "coordinates": []
     };
-    alert("ADD FEATURE: " + this._currentFeature + ": " + this.data[this._currentFeature].type);
     return this._currentFeature;
   }
   
