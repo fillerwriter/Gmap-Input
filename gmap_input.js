@@ -224,6 +224,7 @@
         break;
       }
 
+      $this.options.currentOverlay.hideEdit();
       $this.options.currentOverlay = undefined;
     });
 
@@ -340,16 +341,18 @@
       strokeWeight: 3
     };
 
-    this.options.currentOverlay = new google.maps.Polygon(polyOptions);
+    this.options.currentOverlay = new GmapPolyEdit();
+    this.options.currentOverlay.showEdit();
     this.options.currentOverlay.setMap(this._map);
 
+    // @TODO: Need to rework so our custom objects can either trigger events or route around.
     google.maps.event.addListener(this.options.currentOverlay, 'click', function(e) {
       $this.click(e, this, 'Polygon');
     });
 
-    google.maps.event.addListener(this.options.currentOverlay, 'dblclick', function(e) {
+    /*google.maps.event.addListener(this.options.currentOverlay, 'dblclick', function(e) {
       $this.doubleclick(e, this, 'Polygon');
-    });
+    });*/
 
     this.data.addFeature('Polygon');
 
@@ -467,6 +470,91 @@
         type: "GeometryCollection",
         geometries: this.data
       };
+    }
+  }
+
+
+
+  // Polygon for editing.
+  function GmapPolyEdit(options) {
+    if (options == undefined) {
+      options = new Object();
+    }
+  
+    var path = new Array();
+    if (options.path != undefined) {
+      path = options.path;
+    }
+    this.poly = new google.maps.Polygon({
+      path: path,
+      strokeColor: "#FF0000",
+      strokeOpacity: 0.8,
+      strokeWeight: 2,
+      fillColor: "#FF0000",
+      fillOpacity: 0.35
+    });
+    this.init();
+  }
+
+  // init function
+  GmapPolyEdit.prototype.init = function() {
+    var $this = this;
+    this.path = this.poly.getPath();
+    this.points = new Array();
+    var image = new google.maps.MarkerImage('img/point-handle.png',
+      // Size
+      new google.maps.Size(15, 15),
+      // The origin for this image is 0,0.
+      new google.maps.Point(0, 0),
+      // Anchor.
+      new google.maps.Point(8, 8));
+
+    google.maps.event.addListener(this.path, 'insert_at', function(i) {
+      var map = $this.poly.getMap();
+      var marker = new google.maps.Marker({
+        position: this.getAt(i),
+        map: map,
+        icon: image
+      });
+
+      $this.points.push(marker);
+    });
+
+    google.maps.event.addListener(this.poly, 'click', function() {
+      google.maps.event.trigger($this, 'click');
+    });
+  }
+
+  // setMap
+  GmapPolyEdit.prototype.setMap = function(map) {
+    this.poly.setMap(map);
+  }
+
+  GmapPolyEdit.prototype.getPath = function() {
+    return this.poly.getPath();
+  }
+
+  GmapPolyEdit.prototype.showEdit = function() {
+    this.poly.setOptions({
+      strokeColor: "#FF0000",
+      strokeOpacity: 0.8,
+      strokeWeight: 2,
+      fillColor: "#FF0000",
+      fillOpacity: 0.35
+    });
+  }
+
+  GmapPolyEdit.prototype.hideEdit = function() {
+    this.poly.setOptions({
+      strokeColor: "#00FF00",
+      strokeOpacity: 0.8,
+      strokeWeight: 2,
+      fillColor: "#00FF00",
+      fillOpacity: 0.35
+    });
+    
+    for (var i in this.points) {
+      this.points[i].setVisible(false);
     }
   }
 
