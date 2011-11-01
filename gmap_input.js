@@ -231,7 +231,7 @@
     });
 
     $('.dropdown', drawControlContainer).click(function () {
-      $('.options').slideToggle('medium');
+      $('.options').slideToggle('fast');
     });
   };
 
@@ -242,6 +242,7 @@
 
   // General click callback.
   GmapInput.prototype.click = function (e, feature, featureType) {
+    alert("MAP CLICK");
     if (this.options.mapState == MAP_STATE_DRAWING) {
       switch (this.options.currentFeatureType) {
         case DRAW_POINT:
@@ -269,13 +270,7 @@
       if (feature != undefined) {
         // Panning mode + a polygon == select a polygon.
         // @TODO: Create way to select/deselect items.
-        var polyOptions = {
-          strokeColor: '#FF0000',
-          fillColor: '#FFCC66',
-          strokeOpacity: 1.0,
-          strokeWeight: 3
-        };
-        feature.setOptions(polyOptions);
+        alert("FEATURE " + feature);
       }
     }
   }
@@ -339,6 +334,7 @@
   // Switch drawing setting to polygon drawing
   GmapInput.prototype.drawPolygon = function (coordinates) {
     $this = this;
+    alert(this.click);
 
     this.options.currentOverlay = new GmapFeatureEdit({
       feature: new google.maps.Polygon()
@@ -347,6 +343,10 @@
     this.options.currentOverlay._setStateEdit();
 
     google.maps.event.addListener(this.options.currentOverlay, 'click', function(e) {
+      alert("POLYGON CLICK");
+      alert(e);
+      alert("CLICK FUNCTION");
+      alert($this.click);
       $this.click(e, this, 'Polygon');
     });
 
@@ -529,8 +529,9 @@
       $this._pathInsertCallback(i);
     });
 
-    google.maps.event.addListener(this._feature, 'click', function() {
-      google.maps.event.trigger($this, 'click');
+    google.maps.event.addListener(this._feature, 'click', function(e) {
+      alert("EVENT " + e);
+      google.maps.event.trigger($this, 'click', e);
     });
 
     google.maps.event.addListener(this._feature, 'dblclick', function() {
