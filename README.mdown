@@ -1,0 +1,5 @@
+# Gmap Input
+
+jQuery plugin for interacting with simple geospatial types. Speak GeoJSON, will convert a textarea into a Google Map.
+
+*@TODO:* Fill this out.
