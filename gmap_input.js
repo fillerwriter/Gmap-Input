@@ -61,6 +61,7 @@
     this._defaults = defaults;
     this._name = pluginName;
     this._map = null;
+    this._features;
 
     this.init();
   }
@@ -71,6 +72,7 @@
     this.options.currentFeatureType = DRAW_POINT;
     this.options.currentOverlay = undefined;
     this.options.dblClickTimer = undefined;
+    this._features = new Array();
 
     this._mapcontainer = $(this.element).after('<div class="gmapInputMap"></div>').siblings('.gmapInputMap').get(0);
     var start = new google.maps.LatLng(this.options.startPoint.lat, this.options.startPoint.lon);
@@ -85,8 +87,6 @@
     google.maps.event.addListener(this._map, 'click', function(e) {
       $this.click(e);
     });
-
-    // END TEMP
 
     google.maps.event.addListener(this._map, 'dblclick', function(e) {
       $this.doubleclick(e);
@@ -242,7 +242,6 @@
 
   // General click callback.
   GmapInput.prototype.click = function (e, feature, featureType) {
-    alert("MAP CLICK");
     if (this.options.mapState == MAP_STATE_DRAWING) {
       switch (this.options.currentFeatureType) {
         case DRAW_POINT:
@@ -270,7 +269,13 @@
       if (feature != undefined) {
         // Panning mode + a polygon == select a polygon.
         // @TODO: Create way to select/deselect items.
-        alert("FEATURE " + feature);
+        this.options.currentOverlay = feature;
+        this.options.currentFeatureType = featureType;
+        this.options.currentOverlay._setStateEdit();
+      } else {
+        // Panning mode + no polygon == deselect polygon
+        this.options.currentOverlay._setStateStatic();
+        this.options.currentOverlay = undefined;
       }
     }
   }
@@ -303,12 +308,7 @@
 
   // Switch drawing setting to line drawing
   GmapInput.prototype.drawLine = function (coordinates) {
-    $this = this;
-    var lineOptions = {
-      strokeColor: '#FFCC66',
-      strokeOpacity: 1.0,
-      strokeWeight: 3
-    };
+    $gmapinput = this;
 
     this.options.currentOverlay = new GmapFeatureEdit({
       feature: new google.maps.Polyline()
@@ -317,11 +317,11 @@
     this.options.currentOverlay._setStateEdit();
 
     google.maps.event.addListener(this.options.currentOverlay, 'click', function(e) {
-      $this.click(e, this, 'Line');
+      $gmapinput.click(e, this, 'Line');
     });
 
     google.maps.event.addListener(this.options.currentOverlay, 'dblclick', function(e) {
-      $this.doubleclick(e, this, 'Line');
+      $gmapinput.doubleclick(e, this, 'Line');
     });
 
     this.data.addFeature('LineString');
@@ -333,25 +333,25 @@
 
   // Switch drawing setting to polygon drawing
   GmapInput.prototype.drawPolygon = function (coordinates) {
-    $this = this;
-    alert(this.click);
+    $gmapinput = this;
 
-    this.options.currentOverlay = new GmapFeatureEdit({
+    var poly = new GmapFeatureEdit({
       feature: new google.maps.Polygon()
     });
+
+    this.options.currentOverlay = poly;
     this.options.currentOverlay.setMap(this._map);
     this.options.currentOverlay._setStateEdit();
 
-    google.maps.event.addListener(this.options.currentOverlay, 'click', function(e) {
-      alert("POLYGON CLICK");
-      alert(e);
-      alert("CLICK FUNCTION");
-      alert($this.click);
-      $this.click(e, this, 'Polygon');
+    google.maps.event.addListener(poly, 'click', function(e) {
+      var path = this.getPath();
+      var item = path.getAt(0);
+      alert("DRAW PROTOTYPE: " + item.lat());
+      $gmapinput.click(e, this, 'Polygon');
     });
 
     google.maps.event.addListener(this.options.currentOverlay, 'dblclick', function(e) {
-      $this.doubleclick(e, this, 'Polygon');
+      $gmapinput.doubleclick(e, this, 'Polygon');
     });
 
     this.data.addFeature('Polygon');
@@ -530,7 +530,9 @@
     });
 
     google.maps.event.addListener(this._feature, 'click', function(e) {
-      alert("EVENT " + e);
+      var path = this.getPath();
+      var item = path.getAt(0);
+      alert("GMAP FEATURE: " + item.lat());
       google.maps.event.trigger($this, 'click', e);
     });
 
