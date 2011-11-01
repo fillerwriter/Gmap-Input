@@ -86,6 +86,8 @@
       $this.click(e);
     });
 
+    // END TEMP
+
     google.maps.event.addListener(this._map, 'dblclick', function(e) {
       $this.doubleclick(e);
     });
@@ -224,7 +226,7 @@
         break;
       }
 
-      $this.options.currentOverlay.hideEdit();
+      $this.options.currentOverlay.setEditState(GMAP_EDIT_STATE_STATIC);
       $this.options.currentOverlay = undefined;
     });
 
@@ -260,7 +262,7 @@
           }
         break;
         case DRAW_BOUNDS:
-          // @TODO: Add bounds response.
+          // @TODO: Add bounds response. But not here, in a mouse down/up callback. Bleh...
         break;
       }
     } else {
@@ -313,8 +315,11 @@
       strokeWeight: 3
     };
 
-    this.options.currentOverlay = new google.maps.Polyline(lineOptions);
+    this.options.currentOverlay = new GmapFeatureEdit({
+      feature: new google.maps.Polyline()
+    });
     this.options.currentOverlay.setMap(this._map);
+    this.options.currentOverlay._setStateEdit();
 
     google.maps.event.addListener(this.options.currentOverlay, 'click', function(e) {
       $this.click(e, this, 'Line');
@@ -334,25 +339,20 @@
   // Switch drawing setting to polygon drawing
   GmapInput.prototype.drawPolygon = function (coordinates) {
     $this = this;
-    var polyOptions = {
-      strokeColor: '#FFCC66',
-      fillColor: '#FFCC66',
-      strokeOpacity: 1.0,
-      strokeWeight: 3
-    };
 
-    this.options.currentOverlay = new GmapPolyEdit();
-    this.options.currentOverlay.showEdit();
+    this.options.currentOverlay = new GmapFeatureEdit({
+      feature: new google.maps.Polygon()
+    });
     this.options.currentOverlay.setMap(this._map);
+    this.options.currentOverlay._setStateEdit();
 
-    // @TODO: Need to rework so our custom objects can either trigger events or route around.
     google.maps.event.addListener(this.options.currentOverlay, 'click', function(e) {
       $this.click(e, this, 'Polygon');
     });
 
-    /*google.maps.event.addListener(this.options.currentOverlay, 'dblclick', function(e) {
+    google.maps.event.addListener(this.options.currentOverlay, 'dblclick', function(e) {
       $this.doubleclick(e, this, 'Polygon');
-    });*/
+    });
 
     this.data.addFeature('Polygon');
 
@@ -475,88 +475,142 @@
 
 
 
-  // Polygon for editing.
-  function GmapPolyEdit(options) {
-    if (options == undefined) {
-      options = new Object();
-    }
+  // Abstract class for features.
+  // We do this so that we can keep a state with our features. Namely, if we're editing it or not.
+  // For now, to reduce complexity we are only thinking about polylines and simple polygons.
   
-    var path = new Array();
-    if (options.path != undefined) {
-      path = options.path;
+  // constants
+  var GMAP_EDIT_STATE_EDIT = 'edit';
+  var GMAP_EDIT_STATE_STATIC = 'static';
+  
+  function GmapFeatureEdit(options) {
+    var defaults = {
+      feature: undefined,
+      static: {
+        strokeColor: "#FF0000",
+        strokeOpacity: 0.8,
+        strokeWeight: 2,
+        fillColor: "#FF0000",
+        fillOpacity: 0.35
+      },
+      edit: {
+        strokeColor: "#00FF00",
+        strokeOpacity: 0.8,
+        strokeWeight: 2,
+        fillColor: "#00FF00",
+        fillOpacity: 0.35
+      }
+    };
+    
+    this.options = $.extend( {}, defaults, options);
+
+    if (this.options.feature == undefined) {
+      throw "Gmap Feature must be defined";
     }
-    this.poly = new google.maps.Polygon({
-      path: path,
-      strokeColor: "#FF0000",
-      strokeOpacity: 0.8,
-      strokeWeight: 2,
-      fillColor: "#FF0000",
-      fillOpacity: 0.35
-    });
+
+    this._state;
+    this._feature;
+    this._points;
+
     this.init();
   }
 
-  // init function
-  GmapPolyEdit.prototype.init = function() {
-    var $this = this;
-    this.path = this.poly.getPath();
-    this.points = new Array();
-    var image = new google.maps.MarkerImage('img/point-handle.png',
-      // Size
-      new google.maps.Size(15, 15),
-      // The origin for this image is 0,0.
-      new google.maps.Point(0, 0),
-      // Anchor.
-      new google.maps.Point(8, 8));
+  // init function.
+  GmapFeatureEdit.prototype.init = function() {
+    $this = this;
+    this._feature = this.options.feature;
+    this._state = GMAP_EDIT_STATE_STATIC;
+    this._path = this._feature.getPath();
+    this._points = new Array();
 
-    google.maps.event.addListener(this.path, 'insert_at', function(i) {
-      var map = $this.poly.getMap();
-      var marker = new google.maps.Marker({
-        position: this.getAt(i),
-        map: map,
-        icon: image
-      });
+    this._feature.setOptions(this.options[this._state]);
 
-      $this.points.push(marker);
+    google.maps.event.addListener(this._path, 'insert_at', function(i) {
+      $this._pathInsertCallback(i);
     });
 
-    google.maps.event.addListener(this.poly, 'click', function() {
+    google.maps.event.addListener(this._feature, 'click', function() {
       google.maps.event.trigger($this, 'click');
     });
+
+    google.maps.event.addListener(this._feature, 'dblclick', function() {
+      google.maps.event.trigger($this, 'dblclick');
+    });
+  }
+
+  // getMap
+  GmapFeatureEdit.prototype.getMap = function(map) {
+    return this._feature.getMap();
   }
 
   // setMap
-  GmapPolyEdit.prototype.setMap = function(map) {
-    this.poly.setMap(map);
+  GmapFeatureEdit.prototype.setMap = function(map) {
+    this._feature.setMap(map);
   }
 
-  GmapPolyEdit.prototype.getPath = function() {
-    return this.poly.getPath();
+  // getPath
+  GmapFeatureEdit.prototype.getPath = function() {
+    return this._feature.getPath();
   }
 
-  GmapPolyEdit.prototype.showEdit = function() {
-    this.poly.setOptions({
-      strokeColor: "#FF0000",
-      strokeOpacity: 0.8,
-      strokeWeight: 2,
-      fillColor: "#FF0000",
-      fillOpacity: 0.35
-    });
+  // setPath
+  GmapFeatureEdit.prototype.setPath = function(newPath) {
+    this._path = newPath;
   }
 
-  GmapPolyEdit.prototype.hideEdit = function() {
-    this.poly.setOptions({
-      strokeColor: "#00FF00",
-      strokeOpacity: 0.8,
-      strokeWeight: 2,
-      fillColor: "#00FF00",
-      fillOpacity: 0.35
-    });
-    
-    for (var i in this.points) {
-      this.points[i].setVisible(false);
+  // getEditState
+  GmapFeatureEdit.prototype.getEditState = function() {
+    return this._state;
+  }
+
+  // setEditState
+  GmapFeatureEdit.prototype.setEditState = function(newEditState) {
+    if (newEditState == GMAP_EDIT_STATE_EDIT) {
+      this._setStateEdit();
+    } else if (newEditState == GMAP_EDIT_STATE_STATIC) {
+      this._setStateStatic();
+    } else {
+      throw "Bad edit state option";
     }
   }
+
+  //_setStateEdit
+  GmapFeatureEdit.prototype._setStateEdit = function() {
+    for (var i in this._points) {
+      this._points[i].setVisible(true);
+    }
+    
+    this._feature.setOptions(this.options.edit);
+  }
+
+  //_setStateStatic
+  GmapFeatureEdit.prototype._setStateStatic = function() {
+    for (var i in this._points) {
+      this._points[i].setVisible(false);
+    }
+    
+    this._feature.setOptions(this.options.static);
+  }
+  
+  // _pathInsertCallback
+  GmapFeatureEdit.prototype._pathInsertCallback = function(i) {
+    var image = new google.maps.MarkerImage('img/point-handle.png',
+      new google.maps.Size(15, 15),
+      new google.maps.Point(0, 0),
+      new google.maps.Point(8, 8)
+    );
+
+    var map = $this._feature.getMap();
+    var marker = new google.maps.Marker({
+      position: this._path.getAt(i),
+      map: map,
+      icon: image
+    });
+
+    this._points.push(marker);
+  }
+
+
 
   // A really lightweight plugin wrapper around the constructor,
   // preventing against multiple instantiations
