@@ -3,4 +3,5 @@
 	--js ../src/GmapInput.js \
 	--js ../src/GmapJSON.js \
 	--js ../src/GmapFeatureEdit.js \
+	--js ../src/FeatureManager.js \
 	--js_output_file ../dist/Gmap-Input.js

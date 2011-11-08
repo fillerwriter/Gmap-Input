@@ -22,7 +22,8 @@ function GmapFeatureEdit(options) {
       'strokeWeight': 2,
       'fillColor': '#00FF00',
       'fillOpacity': 0.35
-    }
+    },
+    'imagePath': 'img'
   };
   
   this.options = $.extend( {}, defaults, options);
@@ -31,36 +32,31 @@ function GmapFeatureEdit(options) {
     throw "Gmap Feature must be defined";
   }
 
-  this._state;
-  this._feature;
-  this._points;
+  this._feature = this.options.feature;
+  this._state = GMAP_EDIT_STATE_STATIC;
+  this._path = this._feature.getPath();
+  this._points = new Array();
+  this._featureID = -1;
 
   this.init();
 }
 
 // init function.
 GmapFeatureEdit.prototype.init = function() {
-  $this = this;
-  this._feature = this.options.feature;
-  this._state = GMAP_EDIT_STATE_STATIC;
-  this._path = this._feature.getPath();
-  this._points = new Array();
+  var $gmapfeatureedit = this;
 
   this._feature.setOptions(this.options[this._state]);
 
   google.maps.event.addListener(this._path, 'insert_at', function(i) {
-    $this._pathInsertCallback(i);
+    $gmapfeatureedit._pathInsertCallback(i);
   });
 
   google.maps.event.addListener(this._feature, 'click', function(e) {
-    var path = this.getPath();
-    var item = path.getAt(0);
-    alert("GMAP FEATURE: " + item.lat());
-    google.maps.event.trigger($this, 'click', e);
+    google.maps.event.trigger($gmapfeatureedit, 'click', e);
   });
 
   google.maps.event.addListener(this._feature, 'dblclick', function() {
-    google.maps.event.trigger($this, 'dblclick');
+    google.maps.event.trigger($gmapfeatureedit, 'dblclick');
   });
 }
 
@@ -118,15 +114,24 @@ GmapFeatureEdit.prototype._setStateStatic = function() {
   this._feature.setOptions(this.options['static']);
 }
 
+GmapFeatureEdit.prototype.setFeatureID = function(featureID) {
+  this._featureID = featureID;
+}
+
+GmapFeatureEdit.prototype.getFeatureID = function() {
+  return this._featureID;
+}
+
 // _pathInsertCallback
 GmapFeatureEdit.prototype._pathInsertCallback = function(i) {
-  var image = new google.maps.MarkerImage('img/point-handle.png',
+  var $gmapfeatureedit = this;
+  var image = new google.maps.MarkerImage(this.options.imagePath + '/point-handle.png',
     new google.maps.Size(15, 15),
     new google.maps.Point(0, 0),
     new google.maps.Point(8, 8)
   );
 
-  var map = $this._feature.getMap();
+  var map = this._feature.getMap();
   var marker = new google.maps.Marker({
     position: this._path.getAt(i),
     map: map,
