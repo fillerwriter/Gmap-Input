@@ -135,8 +135,22 @@ GmapFeatureEdit.prototype._pathInsertCallback = function(i) {
   var marker = new google.maps.Marker({
     position: this._path.getAt(i),
     map: map,
-    icon: image
+    icon: image,
+    draggable: true
   });
 
+  marker.meta = {
+    'id': this._points.length
+  };
+
   this._points.push(marker);
+  
+  google.maps.event.addListener(marker, 'drag', function(e) {
+    var featurePath = $gmapfeatureedit._feature.getPath();
+    featurePath.setAt(marker.meta.id, marker.getPosition());
+  });
+  
+  google.maps.event.addListener(marker, 'mouseup', function(e) {
+    google.maps.event.trigger($gmapfeatureedit, 'mouseup', e);
+  });
 }

@@ -294,6 +294,11 @@
   GmapInput.prototype.doubleclick = function (e, feature, featureType) {
     alert("HI");
   }
+  
+  // General mouseup callback.
+  GmapInput.prototype.mouseup = function (e, feature, featureType) {
+    alert("HI");
+  }
 
   // Switch drawing setting to point drawing
   GmapInput.prototype.drawPoint = function (coordinate) {
@@ -365,6 +370,10 @@
 
     google.maps.event.addListener(poly, 'dblclick', function(e) {
       $gmapinput.doubleclick(e, this, 'Polygon');
+    });
+
+    google.maps.event.addListener(poly, 'mouseup', function(e) {
+      $gmapinput.mouseup(e, this, 'Polygon');
     });
 
     this.data.addFeature('Polygon');

@@ -64,6 +64,15 @@ GmapJSON.prototype.removeCoordinate = function(featurePos, position) {
 
 }
 
+// Replace a specific coordinate on a feature.
+GmapJSON.prototype.replaceCoordinate(lat, lon, coordinatePos, featurePos) {
+  if (featurePos == undefined) {
+    featurePos = this._currentFeature;
+  }
+
+  this.data[featurePos].coordinates[coordinatePos] = [lat, lon];
+}
+
 // Return current feature's coordinates
 GmapJSON.prototype.currentFeature = function() {
   return this.data[this._currentFeature]["coordinates"];
