@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+<meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+<title>Google Maps JavaScript API v3 Example: Polyline Complex</title>
+<script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?sensor=false"></script>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
+<script type="text/javascript" src="../src/GmapJSON.js"></script>
+<script type="text/javascript" src="../src/GmapFeatureEdit.js"></script>
+<script type="text/javascript" src="../src/GmapInput.js"></script>
+<script type="text/javascript">
+  var poly;
+  var map;
+
+  $(document).ready(function(){
+    $('.wkt').gmapInput({
+      startPoint: {
+        'lat': 41,
+        'lon': -86,
+        'zoom': 6
+      },
+      'imagePath': '../dist/img'
+    });
+  });
+</script>
+<style type="text/css">
+  .gmapInputMap {
+    width: 500px;
+    height: 500px;
+  }
+</style>
+</head>
+<body class="test">
+  <form>
+    <textarea class="wkt" style="width: 500px; height: 200px;"></textarea>
+  </form>
+</body>
+</html>
