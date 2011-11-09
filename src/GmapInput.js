@@ -245,6 +245,10 @@
     });
   };
 
+  GmapInput.prototype.version = function() {
+    return '0.1';
+  }
+
   // Returns map object.
   GmapInput.prototype.getMap = function () {
     return this._map;
@@ -313,7 +317,7 @@
     var $this = this;
     var marker = new GmapPointFeatureEdit({
       feature: new google.maps.Marker({
-        position: new google.maps.LatLng(coordinate[0], coordinate[1]),
+        position: new google.maps.LatLng(coordinate[0], coordinate[1])
       })
     });
 
