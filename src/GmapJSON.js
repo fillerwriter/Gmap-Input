@@ -12,18 +12,50 @@ GmapJSON.prototype.init = function() {
 
 // Load valid GeoJSON. Takes an GeoJSON object.
 GmapJSON.prototype.loadGeoJSON = function(newData) {
+  var internal = new Array();
   if (newData.type == 'GeometryCollection') {
-    this.data = newData.geometries;
-  } else {
-    if (newData.type == "Polygon") {
-      this.data = new Array({
-        type: "Polygon",
-        "coordinates": newData.coordinates[0]
-      });
-    } else {
-      this.data = new Array(newData);
+    for (var i in newData.geometries) {
+      internal.push(this._GeoJSON2Internal(newData.geometries[i]));
     }
+  } else {
+    internal = this._GeoJSON2Internal(newData);
   }
+
+  this.data = internal;
+}
+
+GmapJSON.prototype._internal2GeoJSON = function(feature) {
+  var returnJSON = {
+    type: feature.type,
+    coordinates: new Array()
+  };
+
+  if (feature.type == "Point") {
+    returnJSON.coordinates = feature.coordinates;
+  } else if (feature.type == "Polyline") {
+    returnJSON.coordinates = feature.coordinates;
+  } else if (feature.type == "Polygon") {
+    returnJSON.coordinates = new Array(feature.coordinates);
+  }
+
+  return returnJSON;
+}
+
+GmapJSON.prototype._GeoJSON2Internal = function(feature) {
+  var returnInternal = {
+    type: feature.type,
+    coordinates: new Array()
+  };
+
+  if (feature.type == "Point") {
+    returnInternal.coordinates = feature.coordinates;
+  } else if (feature.type == "Polyline") {
+    returnInternal.coordinates = feature.coordinates;
+  } else if (feature.type == "Polygon") {
+    returnInternal.coordinates = feature.coordinates[0];
+  }
+
+  return returnInternal;
 }
 
 // add feature
@@ -99,34 +131,15 @@ GmapJSON.prototype.get = function() {
   if (this.data.length == 0) {
     return undefined;
   } else if (this.data.length == 1) {
-    if (this.data[0].type == "Polygon") {
-      var tmp = {
-        type: "Polygon",
-        coordinates: new Array()
-      };
-      tmp.coordinates[0] = this.data[0].coordinates;
-      return tmp;
-    } else {
-      return this.data[0];
-    }
-    return this.data[0];
+    return this._internal2GeoJSON(this.data[0]);
   } else {
-    var geomReturn = new Array();
+    var geoReturn = new Array();
     for (var i in this.data) {
-      if (this.data[i].type == "Polygon") {
-        var tmp = {
-          type: "Polygon",
-          coordinates: new Array()
-        };
-        tmp.coordinates[0] = this.data[i].coordinates;
-        geomReturn.push(tmp);
-      } else {
-        geomReturn.push(this.data[i]);
-      }
+      geoReturn.push(this._internal2GeoJSON(this.data[i]));
     }
     return {
       type: "GeometryCollection",
-      geometries: geomReturn
+      geometries: geoReturn
     };
   }
 }

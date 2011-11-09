@@ -57,6 +57,10 @@ FeatureManager.prototype.getFeatureAt = function(featureID) {
   return this._features[featureID];
 }
 
+FeatureManager.prototype.getFeatures = function() {
+  return this._features;
+}
+
 FeatureManager.prototype.getStats = function() {
   
 }

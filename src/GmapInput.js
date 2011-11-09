@@ -97,9 +97,10 @@
     // Load data from element's value.
     if ($(this.element).val() != '') {
       try {
-        var myData = jQuery.parseJSON($(this.element).val());
-        if (myData) {
-          this.data.loadGeoJSON(myData);
+        var myGeoJSON = jQuery.parseJSON($(this.element).val());
+        if (myGeoJSON) {
+          this.data.loadGeoJSON(myGeoJSON);
+          var myData = this.data.get();
           
           if (myData.type == "GeometryCollection") {
             for (var i in myData.geometries) {
@@ -111,7 +112,7 @@
                   this.drawLine(myData.geometries[i].coordinates);
                 break;
                 case 'Polygon':
-                  this.drawPolygon(myData.geometries[i].coordinates);
+                  this.drawPolygon(myData.geometries[i].coordinates[0]);
                 break;
               }
             }
@@ -124,7 +125,7 @@
                 this.drawLine(myData.coordinates);
               break;
               case 'Polygon':
-                this.drawPolygon(myData.coordinates);
+                this.drawPolygon(myData.coordinates[0]);
               break;
             }
           }
@@ -134,11 +135,11 @@
     }
 
     // reset back to no current polygon if we've loaded data
-    var currentFeature = this._features.getCurrentFeature();
-    if (currentFeature != undefined) {
-      currentFeature.setEditState(GMAP_EDIT_STATE_STATIC);
-      this._features.setCurrentFeature(null);
+    var features = this._features.getFeatures();
+    for (var i in features) {
+      features[i].setEditState(GMAP_EDIT_STATE_STATIC);
     }
+    this._features.setCurrentFeature(null);
 
     var drawControlContainer = document.createElement('DIV');
     var list = $('<ul>').addClass('control').css({
