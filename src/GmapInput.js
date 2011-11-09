@@ -96,6 +96,7 @@
 
     // Load data from element's value.
     if ($(this.element).val() != '') {
+      var bounds = new google.maps.LatLngBounds();
       try {
         var myGeoJSON = jQuery.parseJSON($(this.element).val());
         if (myGeoJSON) {
@@ -132,14 +133,17 @@
         }
       } catch(e) {
       }
+      
+      // Recenter map to show all loaded features.
+      
+      
+      // reset back to no current polygon if we've loaded data
+      var features = this._features.getFeatures();
+      for (var i in features) {
+        features[i].setEditState(GMAP_EDIT_STATE_STATIC);
+      }
+      this._features.setCurrentFeature(null);
     }
-
-    // reset back to no current polygon if we've loaded data
-    var features = this._features.getFeatures();
-    for (var i in features) {
-      features[i].setEditState(GMAP_EDIT_STATE_STATIC);
-    }
-    this._features.setCurrentFeature(null);
 
     var drawControlContainer = document.createElement('DIV');
     var list = $('<ul>').addClass('control').css({
