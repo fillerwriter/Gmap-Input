@@ -310,11 +310,16 @@
 
   // Switch drawing setting to point drawing
   GmapInput.prototype.drawPoint = function (coordinate) {
-    $this = this;
-    var marker = new google.maps.Marker({
-      position: new google.maps.LatLng(coordinate[0], coordinate[1]),
-      map: this._map
+    var $this = this;
+    var marker = new GmapPointFeatureEdit({
+      feature: new google.maps.Marker({
+        position: new google.maps.LatLng(coordinate[0], coordinate[1]),
+      })
     });
+
+    var markerID = $this._features.addFeature(marker);
+    marker.setFeatureID(markerID);
+    marker.setEditState(GMAP_EDIT_STATE_EDIT);
 
     google.maps.event.addListener(marker, 'click', function(e) {
       $this.click(e, this, 'Point');
@@ -322,6 +327,10 @@
 
     google.maps.event.addListener(marker, 'dblclick', function(e) {
       $this.doubleclick(e, this, 'Point');
+    });
+    
+    google.maps.event.addListener(marker, 'mouseup', function(e) {
+      $this.mouseup(e, this, 'Point');
     });
 
     this.data.addFeature('Point');
@@ -333,7 +342,7 @@
   GmapInput.prototype.drawLine = function (coordinates) {
     var $gmapinput = this;
 
-    var line = new GmapFeatureEdit({
+    var line = new GmapPolyFeatureEdit({
       feature: new google.maps.Polyline(),
       "imagePath": this.options.imagePath
     });
@@ -351,6 +360,10 @@
       $gmapinput.doubleclick(e, this, 'Line');
     });
 
+    google.maps.event.addListener(line, 'mouseup', function(e) {
+      $gmapinput.mouseup(e, this, 'Line');
+    });
+
     this.data.addFeature('LineString');
 
     for (var i in coordinates) {
@@ -362,7 +375,7 @@
   GmapInput.prototype.drawPolygon = function (coordinates) {
     var $gmapinput = this;
 
-    var poly = new GmapFeatureEdit({
+    var poly = new GmapPolyFeatureEdit({
       feature: new google.maps.Polygon(),
       "imagePath": this.options.imagePath
     });

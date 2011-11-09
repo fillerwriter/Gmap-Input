@@ -6,7 +6,7 @@
 var GMAP_EDIT_STATE_EDIT = 'edit';
 var GMAP_EDIT_STATE_STATIC = 'static';
 
-function GmapFeatureEdit(options) {
+function GmapPolyFeatureEdit(options) {
   var defaults = {
     'feature': undefined,
     'static': {
@@ -42,7 +42,7 @@ function GmapFeatureEdit(options) {
 }
 
 // init function.
-GmapFeatureEdit.prototype.init = function() {
+GmapPolyFeatureEdit.prototype.init = function() {
   var $gmapfeatureedit = this;
 
   this._feature.setOptions(this.options[this._state]);
@@ -61,32 +61,32 @@ GmapFeatureEdit.prototype.init = function() {
 }
 
 // getMap
-GmapFeatureEdit.prototype.getMap = function(map) {
+GmapPolyFeatureEdit.prototype.getMap = function(map) {
   return this._feature.getMap();
 }
 
 // setMap
-GmapFeatureEdit.prototype.setMap = function(map) {
+GmapPolyFeatureEdit.prototype.setMap = function(map) {
   this._feature.setMap(map);
 }
 
 // getPath
-GmapFeatureEdit.prototype.getPath = function() {
+GmapPolyFeatureEdit.prototype.getPath = function() {
   return this._feature.getPath();
 }
 
 // setPath
-GmapFeatureEdit.prototype.setPath = function(newPath) {
+GmapPolyFeatureEdit.prototype.setPath = function(newPath) {
   this._path = newPath;
 }
 
 // getEditState
-GmapFeatureEdit.prototype.getEditState = function() {
+GmapPolyFeatureEdit.prototype.getEditState = function() {
   return this._state;
 }
 
 // setEditState
-GmapFeatureEdit.prototype.setEditState = function(newEditState) {
+GmapPolyFeatureEdit.prototype.setEditState = function(newEditState) {
   if (newEditState == GMAP_EDIT_STATE_EDIT) {
     this._setStateEdit();
   } else if (newEditState == GMAP_EDIT_STATE_STATIC) {
@@ -97,7 +97,7 @@ GmapFeatureEdit.prototype.setEditState = function(newEditState) {
 }
 
 //_setStateEdit
-GmapFeatureEdit.prototype._setStateEdit = function() {
+GmapPolyFeatureEdit.prototype._setStateEdit = function() {
   for (var i in this._points) {
     this._points[i].setVisible(true);
   }
@@ -106,7 +106,7 @@ GmapFeatureEdit.prototype._setStateEdit = function() {
 }
 
 //_setStateStatic
-GmapFeatureEdit.prototype._setStateStatic = function() {
+GmapPolyFeatureEdit.prototype._setStateStatic = function() {
   for (var i in this._points) {
     this._points[i].setVisible(false);
   }
@@ -114,16 +114,16 @@ GmapFeatureEdit.prototype._setStateStatic = function() {
   this._feature.setOptions(this.options['static']);
 }
 
-GmapFeatureEdit.prototype.setFeatureID = function(featureID) {
+GmapPolyFeatureEdit.prototype.setFeatureID = function(featureID) {
   this._featureID = featureID;
 }
 
-GmapFeatureEdit.prototype.getFeatureID = function() {
+GmapPolyFeatureEdit.prototype.getFeatureID = function() {
   return this._featureID;
 }
 
 // _pathInsertCallback
-GmapFeatureEdit.prototype._pathInsertCallback = function(i) {
+GmapPolyFeatureEdit.prototype._pathInsertCallback = function(i) {
   var $gmapfeatureedit = this;
   var image = new google.maps.MarkerImage(this.options.imagePath + '/point-handle.png',
     new google.maps.Size(15, 15),

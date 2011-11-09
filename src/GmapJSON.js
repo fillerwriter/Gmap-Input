@@ -32,7 +32,7 @@ GmapJSON.prototype._internal2GeoJSON = function(feature) {
 
   if (feature.type == "Point") {
     returnJSON.coordinates = feature.coordinates;
-  } else if (feature.type == "Polyline") {
+  } else if (feature.type == "LineString") {
     returnJSON.coordinates = feature.coordinates;
   } else if (feature.type == "Polygon") {
     returnJSON.coordinates = new Array(feature.coordinates);
@@ -49,7 +49,7 @@ GmapJSON.prototype._GeoJSON2Internal = function(feature) {
 
   if (feature.type == "Point") {
     returnInternal.coordinates = feature.coordinates;
-  } else if (feature.type == "Polyline") {
+  } else if (feature.type == "LineString") {
     returnInternal.coordinates = feature.coordinates;
   } else if (feature.type == "Polygon") {
     returnInternal.coordinates = feature.coordinates[0];
@@ -109,7 +109,11 @@ GmapJSON.prototype.replaceCoordinate = function(lat, lon, coordinatePos, feature
     featurePos = this._currentFeature;
   }
 
-  this.data[featurePos].coordinates[coordinatePos] = [lat, lon];
+  if (this.data[featurePos].type == "Point") {
+    this.data[coordinatePos - 1].coordinates = [lat, lon];
+  } else {
+    this.data[featurePos].coordinates[coordinatePos] = [lat, lon];
+  }
 }
 
 // Return current feature's coordinates
