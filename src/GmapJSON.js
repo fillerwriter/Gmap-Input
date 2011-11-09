@@ -15,7 +15,14 @@ GmapJSON.prototype.loadGeoJSON = function(newData) {
   if (newData.type == 'GeometryCollection') {
     this.data = newData.geometries;
   } else {
-    this.data = new Array(newData);
+    if (newData.type == "Polygon") {
+      this.data = new Array({
+        type: "Polygon",
+        "coordinates": newData.coordinates[0]
+      });
+    } else {
+      this.data = new Array(newData);
+    }
   }
 }
 
@@ -65,7 +72,7 @@ GmapJSON.prototype.removeCoordinate = function(featurePos, position) {
 }
 
 // Replace a specific coordinate on a feature.
-GmapJSON.prototype.replaceCoordinate(lat, lon, coordinatePos, featurePos) {
+GmapJSON.prototype.replaceCoordinate = function(lat, lon, coordinatePos, featurePos) {
   if (featurePos == undefined) {
     featurePos = this._currentFeature;
   }
@@ -82,13 +89,8 @@ GmapJSON.prototype.currentFeature = function() {
 GmapJSON.prototype.stringify = function() {
   if (this.data.length == 0) {
     return '';
-  } else if (this.data.length == 1) {
-    return JSON.stringify(this.data[0]);
   } else {
-    return JSON.stringify({
-      type: "GeometryCollection",
-      geometries: this.data
-    });
+    return JSON.stringify(this.get());
   }
 }
 
@@ -97,11 +99,34 @@ GmapJSON.prototype.get = function() {
   if (this.data.length == 0) {
     return undefined;
   } else if (this.data.length == 1) {
+    if (this.data[0].type == "Polygon") {
+      var tmp = {
+        type: "Polygon",
+        coordinates: new Array()
+      };
+      tmp.coordinates[0] = this.data[0].coordinates;
+      return tmp;
+    } else {
+      return this.data[0];
+    }
     return this.data[0];
   } else {
+    var geomReturn = new Array();
+    for (var i in this.data) {
+      if (this.data[i].type == "Polygon") {
+        var tmp = {
+          type: "Polygon",
+          coordinates: new Array()
+        };
+        tmp.coordinates[0] = this.data[i].coordinates;
+        geomReturn.push(tmp);
+      } else {
+        geomReturn.push(this.data[i]);
+      }
+    }
     return {
       type: "GeometryCollection",
-      geometries: this.data
+      geometries: geomReturn
     };
   }
 }

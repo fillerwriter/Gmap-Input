@@ -151,6 +151,7 @@ GmapFeatureEdit.prototype._pathInsertCallback = function(i) {
   });
   
   google.maps.event.addListener(marker, 'mouseup', function(e) {
+    e.featureID = $gmapfeatureedit.getFeatureID();
     google.maps.event.trigger($gmapfeatureedit, 'mouseup', e);
   });
 }

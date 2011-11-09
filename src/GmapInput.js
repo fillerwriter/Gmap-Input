@@ -134,7 +134,11 @@
     }
 
     // reset back to no current polygon if we've loaded data
-    //this.options.currentOverlay = undefined;
+    var currentFeature = this._features.getCurrentFeature();
+    if (currentFeature != undefined) {
+      currentFeature.setEditState(GMAP_EDIT_STATE_STATIC);
+      this._features.setCurrentFeature(null);
+    }
 
     var drawControlContainer = document.createElement('DIV');
     var list = $('<ul>').addClass('control').css({
@@ -229,8 +233,10 @@
       }
 
       var currentFeature = $this._features.getCurrentFeature();
-      currentFeature.setEditState(GMAP_EDIT_STATE_STATIC);
-      $this._features.setCurrentFeature(null);
+      if (currentFeature != undefined) {
+        currentFeature.setEditState(GMAP_EDIT_STATE_STATIC);
+        $this._features.setCurrentFeature(null);
+      }
     });
 
     $('.dropdown', drawControlContainer).click(function () {
@@ -297,7 +303,8 @@
   
   // General mouseup callback.
   GmapInput.prototype.mouseup = function (e, feature, featureType) {
-    alert("HI");
+    this.data.replaceCoordinate(e.latLng.lat(), e.latLng.lng(), e.featureID);
+    $(this.element).val(this.data.stringify());
   }
 
   // Switch drawing setting to point drawing
