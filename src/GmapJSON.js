@@ -110,7 +110,7 @@ GmapJSON.prototype.replaceCoordinate = function(lat, lon, coordinatePos, feature
   }
 
   if (this.data[featurePos].type == "Point") {
-    this.data[coordinatePos - 1].coordinates = [lat, lon];
+    this.data[featurePos].coordinates = [lat, lon];
   } else {
     this.data[featurePos].coordinates[coordinatePos] = [lat, lon];
   }

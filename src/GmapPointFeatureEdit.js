@@ -44,7 +44,7 @@ GmapPointFeatureEdit.prototype.init = function() {
   });
 
   google.maps.event.addListener(this._feature, 'mouseup', function(e) {
-    e.featureID = $this.getFeatureID();
+    e.featureID = 0;
     google.maps.event.trigger($this, 'mouseup', e);
   });
 }

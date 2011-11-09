@@ -304,7 +304,7 @@
   
   // General mouseup callback.
   GmapInput.prototype.mouseup = function (e, feature, featureType) {
-    this.data.replaceCoordinate(e.latLng.lat(), e.latLng.lng(), e.featureID);
+    this.data.replaceCoordinate(e.latLng.lat(), e.latLng.lng(), e.featureID, feature.getFeatureID() - 1);
     $(this.element).val(this.data.stringify());
   }
 
