@@ -18,7 +18,7 @@ GmapJSON.prototype.loadGeoJSON = function(newData) {
       internal.push(this._GeoJSON2Internal(newData.geometries[i]));
     }
   } else {
-    internal = this._GeoJSON2Internal(newData);
+    internal = new Array(this._GeoJSON2Internal(newData));
   }
 
   this.data = internal;
@@ -92,9 +92,9 @@ GmapJSON.prototype.addCoordinate = function(lat, lon, featurePos) {
     featurePos = this._currentFeature;
   }
   if (this.data[featurePos].type == 'Point') {
-    this.data[featurePos].coordinates = [lat, lon];
+    this.data[featurePos].coordinates = [lon, lat];
   } else {
-    this.data[featurePos].coordinates.push([lat, lon]);
+    this.data[featurePos].coordinates.push([lon, lat]);
   }
 }
 
@@ -110,9 +110,9 @@ GmapJSON.prototype.replaceCoordinate = function(lat, lon, coordinatePos, feature
   }
 
   if (this.data[featurePos].type == "Point") {
-    this.data[featurePos].coordinates = [lat, lon];
+    this.data[featurePos].coordinates = [lon, lat];
   } else {
-    this.data[featurePos].coordinates[coordinatePos] = [lat, lon];
+    this.data[featurePos].coordinates[coordinatePos] = [lon, lat];
   }
 }
 

@@ -264,20 +264,20 @@
     if (this.options.mapState == MAP_STATE_DRAWING) {
       switch (this.options.currentFeatureType) {
         case DRAW_POINT:
-          this.drawPoint(new Array(e.latLng.lat(), e.latLng.lng()));
+          this.drawPoint(new Array(e.latLng.lng(), e.latLng.lat()));
         break;
         case DRAW_LINE:
           if (currentFeature == undefined) {
-            this.drawLine(new Array(new Array(e.latLng.lat(), e.latLng.lng())));
+            this.drawLine(new Array(new Array(e.latLng.lng(), e.latLng.lat())));
           } else {
-            this.appendPoint(new Array(e.latLng.lat(), e.latLng.lng()));
+            this.appendPoint(new Array(e.latLng.lng(), e.latLng.lat()));
           }
         break;
         case DRAW_POLY:
           if (currentFeature == undefined) {
-            this.drawPolygon(new Array(new Array(e.latLng.lat(), e.latLng.lng())));
+            this.drawPolygon(new Array(new Array(e.latLng.lng(), e.latLng.lat())));
           } else {
-            this.appendPoint(new Array(e.latLng.lat(), e.latLng.lng()));
+            this.appendPoint(new Array(e.latLng.lng(), e.latLng.lat()));
           }
         break;
         case DRAW_BOUNDS:
@@ -312,7 +312,7 @@
   
   // General mouseup callback.
   GmapInput.prototype.mouseup = function (e, feature, featureType) {
-    this.data.replaceCoordinate(e.latLng.lat(), e.latLng.lng(), e.featureID, feature.getFeatureID() - 1);
+    this.data.replaceCoordinate(e.latLng.lng(), e.latLng.lat(), e.featureID, feature.getFeatureID() - 1);
     $(this.element).val(this.data.stringify());
   }
 
@@ -321,7 +321,7 @@
     var $this = this;
     var marker = new GmapPointFeatureEdit({
       feature: new google.maps.Marker({
-        position: new google.maps.LatLng(coordinate[0], coordinate[1])
+        position: new google.maps.LatLng(coordinate[1], coordinate[0])
       })
     });
 
@@ -342,7 +342,7 @@
     });
 
     this.data.addFeature('Point');
-    this.data.addCoordinate(coordinate[0], coordinate[1]);
+    this.data.addCoordinate(coordinate[1], coordinate[0]);
     $(this.element).val(this.data.stringify());
   }
 
@@ -417,9 +417,9 @@
     var currentFeature = this._features.getCurrentFeature();
     if (currentFeature != undefined) {
       var path = currentFeature.getPath();
-      path.push(new google.maps.LatLng(coordinate[0], coordinate[1]));
+      path.push(new google.maps.LatLng(coordinate[1], coordinate[0]));
 
-      this.data.addCoordinate(coordinate[0], coordinate[1]);
+      this.data.addCoordinate(coordinate[1], coordinate[0]);
       $(this.element).val(this.data.stringify());
     }
   }

@@ -5,7 +5,7 @@ function FeatureManager(options) {
     "map": undefined
   };
   
-  this.options = $.extend( {}, defaults, options);  
+  this.options = jQuery.extend( {}, defaults, options);  
   this.init();
 }
 
