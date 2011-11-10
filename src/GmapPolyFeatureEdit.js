@@ -26,7 +26,7 @@ function GmapPolyFeatureEdit(options) {
     'imagePath': 'img'
   };
   
-  this.options = $.extend( {}, defaults, options);
+  this.options = jQuery.extend( {}, defaults, options);
 
   if (this.options.feature == undefined) {
     throw "Gmap Feature must be defined";
