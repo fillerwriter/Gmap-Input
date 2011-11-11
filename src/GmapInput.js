@@ -69,7 +69,7 @@
     var $this = this;
     this.options.mapState = MAP_STATE_PANNING;
     this.options.currentFeatureType = DRAW_POINT;
-    this.options.dblClickTimer = undefined;
+    this._dblClickTimer = undefined;
 
     this._mapcontainer = $(this.element).after('<div class="gmapInputMap"></div>').siblings('.gmapInputMap').get(0);
     var start = new google.maps.LatLng(this.options.startPoint.lat, this.options.startPoint.lon);
@@ -87,11 +87,17 @@
     });
     
     google.maps.event.addListener(this._map, 'click', function(e) {
-      $this.click(e);
+      $this._dblClickTimer = setTimeout(function() {
+        $this.click(e);
+      }, 250);
     });
 
     google.maps.event.addListener(this._map, 'dblclick', function(e) {
       $this.doubleclick(e);
+    });
+
+    google.maps.event.addListener(this._map, 'rightclick', function(e) {
+      $this.rightclick(e);
     });
 
     // Load data from element's value.
@@ -307,9 +313,20 @@
 
   // General doubleclick callback.
   GmapInput.prototype.doubleclick = function (e, feature, featureType) {
-    alert("HI");
+    clearTimeout(this._dblClickTimer);
+    var currentFeature = this._features.getCurrentFeature();
+    if (currentFeature != undefined) {
+      this.appendPoint(new Array(e.latLng.lng(), e.latLng.lat()));
+      currentFeature.setEditState(GMAP_EDIT_STATE_STATIC);
+      this._features.setCurrentFeature(null);
+    }
   }
+
+  // General rightclick callback.
+  GmapInput.prototype.rightclick = function (e, feature, featureType) {
   
+  }
+
   // General mouseup callback.
   GmapInput.prototype.mouseup = function (e, feature, featureType) {
     this.data.replaceCoordinate(e.latLng.lng(), e.latLng.lat(), e.featureID, feature.getFeatureID() - 1);
