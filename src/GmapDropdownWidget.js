@@ -5,6 +5,7 @@ var GMAP_WIDGET_OPTION_BOUNDS = 'drawbounds';
 
 function GmapDropdownWidget(options) {
   var defaults = {
+    imagePath: 'img',
     selections: {}
   };
 
@@ -13,50 +14,126 @@ function GmapDropdownWidget(options) {
   defaults.selections[GMAP_WIDGET_OPTION_POLY] = 'Draw Polygon';
   defaults.selections[GMAP_WIDGET_OPTION_BOUNDS] = 'Draw Bounds';
 
-  this.options = jQuery.extend( {}, defaults, options) ;
+  this.options = jQuery.extend( {}, defaults, options);
   this.init();
 }
 
 GmapDropdownWidget.prototype.init = function() {
-  var $ = jQuery;
-  this.drawControl = $('<div>');
-  var list = $('<ul>').addClass('control').css({
-      'background-color': '#FFF',
-      'list-style': 'none',
-      'padding-left': 0,
-      'float': 'left',
-      'font-family': '"Helvetica", sans-serif',
-      'font-size': '0.8em',
-      'margin': 0
-    });
+  var $this = this;
 
-  for (var i in this.options.selections) {
-    list.append('<li>' + this.options.selections[i] + '</li>');
-  }
+  this._currentState = 'active';
+  this._currentDrawOption = GMAP_WIDGET_OPTION_POINT;
+  this.iterator = 1;
 
-  this.drawControl.append(list.get(0)).append('<div class="dropdown">expand</div>').css({
-      'background': '#FFF',
-      'border': '1px solid #7895d7',
-      'cursor': 'pointer',
-      'box-shadow': '1px 1px 2px #999',
-      'margin': '5px 5px 0 0',
-      'padding': '3px',
-      'overflow': 'hidden'
-    });
-  $('.dropdown', this.drawControl).css({
-      'background': 'url(' + this.options.imagePath + '/dropdown.png) center center no-repeat',
-      'border-left': '1px solid #000',
-      'cursor': 'pointer',
-      'display': 'block',
-      'float': 'left',
-      'height': '11px',
-      'text-indent': '-9999px',
-      'width': '16px'
-    });
+  this.drawControl = $('<div>').addClass('gmapdropdownwidget');
+  this.render(this.drawControl);
 }
 
 GmapDropdownWidget.prototype.get = function() {
   return this.drawControl.get(0);
+}
+
+GmapDropdownWidget.prototype.clickItem = function(item) {
+  var $ = jQuery;
+  var $this = this;
+  
+  var dataType = $(item).data('drawType');
+  
+  if (dataType == this._currentDrawOption) {
+    if (this._currentState == 'active') {
+      this._currentState = 'inactive';
+    } else {
+      this._currentState = 'active';
+    }
+  } else {
+    this._currentState = 'active';
+  }
+
+  this._currentDrawOption = dataType;
+
+  this.render($(item).parents('.gmapdropdownwidget'));
+}
+
+GmapDropdownWidget.prototype.render = function(widget) {
+  var $ = jQuery;
+  var $this = this;
+  
+  var list = $('<ul>').addClass('control').css({
+    'background-color': '#FFF',
+    'list-style': 'none',
+    'padding': 0,
+    'float': 'left',
+    'font-family': '"Helvetica", sans-serif',
+    'font-size': '0.8em',
+    'margin': 0
+  });
+
+  var current = $('<ul>').addClass('current');
+  var options = $('<ul>').addClass('options');
+  list.append(current).append(options);
+
+  var first = true;
+
+  for (var i in this.options.selections) {
+    var datum = $('<li>' + this.options.selections[i] + '</li>').data('drawType', i);
+    if (first) {
+      current.append(datum)
+      first = false;
+    } else {
+      options.append(datum);
+    }
+  }
+  
+  widget.empty().append(list).append('<div class="dropdown">expand</div>').css({
+    'background': '#FFF',
+    'border': '1px solid #7895d7',
+    'cursor': 'pointer',
+    'box-shadow': '1px 1px 2px #999',
+    'margin': '5px 5px 0 0',
+    'padding': '0',
+    'overflow': 'hidden'
+  });
+
+  if (this._currentState == 'active') {
+    $('.control', widget).css({
+      'background-color': '#F00'
+    });
+  }
+
+  $('.dropdown', widget).css({
+    'background': 'url(' + this.options.imagePath + '/dropdown.png) center center no-repeat',
+    'border-left': '1px solid #000',
+    'cursor': 'pointer',
+    'display': 'block',
+    'float': 'left',
+    'height': '11px',
+    'text-indent': '-9999px',
+    'width': '16px',
+    'margin': '3px'
+  });
+
+  $('ul', widget).css({
+    'list-style': 'none',
+    'margin': 0,
+    'padding': 0
+  });
+  
+  $('li', widget).css({
+    'width': '7em',
+    'padding': '3px'
+  });
+
+  $('.options', widget).hide();
+  
+  $('li', widget).click(function() {
+    $this.clickItem(this);
+  });
+
+  $('.dropdown', widget).click(function () {
+    $('.options').slideToggle('fast');
+  });
+}
+  /*
 }
 
 /*

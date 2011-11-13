@@ -152,8 +152,20 @@
     }
 
     // Added dropdown widget
-    this._widget = new GmapDropdownWidget();
-    this._map.controls[google.maps.ControlPosition.TOP_RIGHT].push(this._widget.get());
+    this._widget = new GmapDropdownWidget({
+      imagePath: this.options.imagePath
+    });
+    
+    $(this._widget).bind('render', function() {
+      alert("RENDER");
+    });
+    
+    var widget = this._widget.get(0);
+    
+    $(widget).click(function() {
+    });
+    
+    this._map.controls[google.maps.ControlPosition.TOP_RIGHT].push(widget);
   };
 
   GmapInput.prototype.version = function() {
