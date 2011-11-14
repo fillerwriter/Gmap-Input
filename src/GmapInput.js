@@ -185,6 +185,14 @@
           $this.options.currentFeatureType = DRAW_BOUNDS;
         break;
       }
+
+      if ($this.options.mapState == MAP_STATE_PANNING) {
+        var currentFeature = $this._features.getCurrentFeature();
+        if (currentFeature) {
+          currentFeature.setEditState(GMAP_EDIT_STATE_STATIC);
+          $this._features.setCurrentFeature(null);
+        }
+      }
     });
     
     this._map.controls[google.maps.ControlPosition.TOP_RIGHT].push(widget);
