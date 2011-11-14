@@ -17,13 +17,17 @@
   var map;
 
   $(document).ready(function(){
+    var widgetOptions = {};
+    widgetOptions[GMAP_WIDGET_OPTION_POLY] = 'Draw Polygon';
     $('.wkt').gmapInput({
       startPoint: {
         'lat': 41,
         'lon': -86,
         'zoom': 6
       },
-      'imagePath': '../dist/img'
+      'imagePath': '../dist/img',
+      widgetOptions: widgetOptions,
+      defaultWidgetOption: GMAP_WIDGET_OPTION_POLY
     });
   });
 </script>

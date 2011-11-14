@@ -6,7 +6,8 @@ var GMAP_WIDGET_OPTION_BOUNDS = 'drawbounds';
 function GmapDropdownWidget(options) {
   var defaults = {
     imagePath: 'img',
-    selections: {}
+    selections: {},
+    defaultSelection: GMAP_WIDGET_OPTION_POINT
   };
 
   defaults.selections[GMAP_WIDGET_OPTION_POINT] = 'Draw Point';
@@ -22,7 +23,7 @@ GmapDropdownWidget.prototype.init = function() {
   var $this = this;
 
   this._currentState = 'inactive';
-  this._currentDrawOption = GMAP_WIDGET_OPTION_POINT;
+  this._currentDrawOption = this.options.defaultSelection;
   this.iterator = 1;
 
   this.drawControl = $('<div>').addClass('gmapdropdownwidget');
@@ -79,7 +80,10 @@ GmapDropdownWidget.prototype.render = function(widget) {
   var options = $('<ul>').addClass('options');
   list.append(current).append(options);
 
+  var optionCount = 0;
+
   for (var i in this.options.selections) {
+    optionCount++;
     var datum = $('<li>' + this.options.selections[i] + '</li>').data('drawType', i);
     if (i == this._currentDrawOption) {
       current.append(datum)
@@ -88,7 +92,7 @@ GmapDropdownWidget.prototype.render = function(widget) {
     }
   }
   
-  widget.empty().append(list).append('<div class="dropdown">expand</div>').css({
+  widget.empty().append(list).css({
     'background': '#FFF',
     'border': '1px solid #7895d7',
     'cursor': 'pointer',
@@ -105,24 +109,32 @@ GmapDropdownWidget.prototype.render = function(widget) {
     });
   }
 
-  $('.dropdown', widget).css({
-    'background': 'url(' + this.options.imagePath + '/dropdown.png) center center no-repeat',
-    'border-left': '1px solid #000',
-    'cursor': 'pointer',
-    'display': 'block',
-    'float': 'left',
-    'height': '11px',
-    'text-indent': '-9999px',
-    'width': '16px',
-    'margin': '3px'
-  });
+    $('ul', widget).css({
+      'list-style': 'none',
+      'margin': 0,
+      'padding': 0
+    });
 
-  $('ul', widget).css({
-    'list-style': 'none',
-    'margin': 0,
-    'padding': 0
-  });
-  
+  if (optionCount > 1) {
+    widget.append('<div class="dropdown">expand</div>');
+
+    $('.dropdown', widget).css({
+      'background': 'url(' + this.options.imagePath + '/dropdown.png) center center no-repeat',
+      'border-left': '1px solid #000',
+      'cursor': 'pointer',
+      'display': 'block',
+      'float': 'left',
+      'height': '11px',
+      'text-indent': '-9999px',
+      'width': '16px',
+      'margin': '3px'
+    });
+    
+    $('.dropdown', widget).click(function () {
+      $('.options').slideToggle('fast');
+    });
+  }
+
   $('li', widget).css({
     'width': '7em',
     'padding': '3px'
@@ -132,10 +144,6 @@ GmapDropdownWidget.prototype.render = function(widget) {
   
   $('li', widget).click(function() {
     $this.clickItem(this);
-  });
-
-  $('.dropdown', widget).click(function () {
-    $('.options').slideToggle('fast');
   });
 }
   /*

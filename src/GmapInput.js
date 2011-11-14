@@ -43,8 +43,15 @@
           'zoom': 7
         },
         imagePath: 'img',
-        featureMaxCount: FEATURE_COUNT_UNLIMITED
+        featureMaxCount: FEATURE_COUNT_UNLIMITED,
+        widgetOptions: {},
+        defaultWidgetOption: GMAP_WIDGET_OPTION_POINT
       };
+      
+  defaults.widgetOptions[GMAP_WIDGET_OPTION_POINT] = 'Draw Point';
+  defaults.widgetOptions[GMAP_WIDGET_OPTION_LINE] = 'Draw Line';
+  defaults.widgetOptions[GMAP_WIDGET_OPTION_POLY] = 'Draw Polygon';
+  defaults.widgetOptions[GMAP_WIDGET_OPTION_BOUNDS] = 'Draw Bounds';
 
   // The actual plugin constructor
   function GmapInput( element, options ) {
@@ -89,7 +96,7 @@
     google.maps.event.addListener(this._map, 'click', function(e) {
       $this._dblClickTimer = setTimeout(function() {
         $this.click(e);
-      }, 250);
+      }, 200);
     });
 
     google.maps.event.addListener(this._map, 'dblclick', function(e) {
@@ -153,7 +160,9 @@
 
     // Added dropdown widget
     this._widget = new GmapDropdownWidget({
-      imagePath: this.options.imagePath
+      imagePath: this.options.imagePath,
+      selections: this.options.widgetOptions,
+      defaultSelection: this.options.defaultWidgetOption
     });
     
     var widget = this._widget.get(0);
