@@ -5,4 +5,5 @@
 	--js ../src/GmapPolyFeatureEdit.js \
 	--js ../src/GmapPointFeatureEdit.js \
 	--js ../src/FeatureManager.js \
+	--js ../src/GmapDropdownWidget.js \
 	--js_output_file ../dist/Gmap-Input.js

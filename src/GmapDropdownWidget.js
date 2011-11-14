@@ -21,7 +21,7 @@ function GmapDropdownWidget(options) {
 GmapDropdownWidget.prototype.init = function() {
   var $this = this;
 
-  this._currentState = 'active';
+  this._currentState = 'inactive';
   this._currentDrawOption = GMAP_WIDGET_OPTION_POINT;
   this.iterator = 1;
 
@@ -31,6 +31,13 @@ GmapDropdownWidget.prototype.init = function() {
 
 GmapDropdownWidget.prototype.get = function() {
   return this.drawControl.get(0);
+}
+
+GmapDropdownWidget.prototype.getStatus = function() {
+  return {
+    currentState: this._currentState,
+    currentDrawOption: this._currentDrawOption
+  };
 }
 
 GmapDropdownWidget.prototype.clickItem = function(item) {
@@ -72,13 +79,10 @@ GmapDropdownWidget.prototype.render = function(widget) {
   var options = $('<ul>').addClass('options');
   list.append(current).append(options);
 
-  var first = true;
-
   for (var i in this.options.selections) {
     var datum = $('<li>' + this.options.selections[i] + '</li>').data('drawType', i);
-    if (first) {
+    if (i == this._currentDrawOption) {
       current.append(datum)
-      first = false;
     } else {
       options.append(datum);
     }
@@ -95,8 +99,9 @@ GmapDropdownWidget.prototype.render = function(widget) {
   });
 
   if (this._currentState == 'active') {
-    $('.control', widget).css({
-      'background-color': '#F00'
+    $('.control .current', widget).css({
+      'background-color': '#7895d7',
+      'color': '#FFF'
     });
   }
 

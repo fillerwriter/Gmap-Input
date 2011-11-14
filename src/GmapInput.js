@@ -156,13 +156,26 @@
       imagePath: this.options.imagePath
     });
     
-    $(this._widget).bind('render', function() {
-      alert("RENDER");
-    });
-    
     var widget = this._widget.get(0);
     
     $(widget).click(function() {
+      var settings = $this._widget.getStatus();
+      $this.options.mapState = (settings.currentState == 'active') ? MAP_STATE_DRAWING: MAP_STATE_PANNING;
+      //this.options.currentFeatureType = DRAW_POINT;
+      switch (settings.currentDrawOption) {
+        case GMAP_WIDGET_OPTION_POINT:
+          $this.options.currentFeatureType = DRAW_POINT;
+        break;
+        case GMAP_WIDGET_OPTION_LINE:
+          $this.options.currentFeatureType = DRAW_LINE;
+        break;
+        case GMAP_WIDGET_OPTION_POLY:
+          $this.options.currentFeatureType = DRAW_POLY;
+        break;
+        case GMAP_WIDGET_OPTION_BOUNDS:
+          $this.options.currentFeatureType = DRAW_BOUNDS;
+        break;
+      }
     });
     
     this._map.controls[google.maps.ControlPosition.TOP_RIGHT].push(widget);
