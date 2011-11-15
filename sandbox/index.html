@@ -13,9 +13,6 @@
 <script type="text/javascript" src="../src/GmapDropdownWidget.js"></script>
 <script type="text/javascript" src="../src/GmapInput.js"></script>
 <script type="text/javascript">
-  var poly;
-  var map;
-
   $(document).ready(function(){
     var widgetOptions = {};
     widgetOptions[GMAP_WIDGET_OPTION_POLY] = 'Draw Polygon';
@@ -26,6 +23,8 @@
         'zoom': 6
       },
       'imagePath': '../dist/img'
+      //'widgetOptions': widgetOptions,
+      //'defaultWidgetOption': GMAP_WIDGET_OPTION_POLY
     });
   });
 </script>

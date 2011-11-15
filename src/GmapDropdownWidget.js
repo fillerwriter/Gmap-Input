@@ -6,16 +6,21 @@ var GMAP_WIDGET_OPTION_BOUNDS = 'drawbounds';
 function GmapDropdownWidget(options) {
   var defaults = {
     imagePath: 'img',
-    selections: {},
+    selections: {
+      GMAP_WIDGET_OPTION_POINT: 'Draw Point',
+      GMAP_WIDGET_OPTION_LINE: 'Draw Line',
+      GMAP_WIDGET_OPTION_POLY: 'Draw Poly',
+      GMAP_WIDGET_OPTION_BOUNDS: 'Draw Bounds'
+    },
     defaultSelection: GMAP_WIDGET_OPTION_POINT
   };
 
-  defaults.selections[GMAP_WIDGET_OPTION_POINT] = 'Draw Point';
+  /*defaults.selections[GMAP_WIDGET_OPTION_POINT] = 'Draw Point';
   defaults.selections[GMAP_WIDGET_OPTION_LINE] = 'Draw Line';
   defaults.selections[GMAP_WIDGET_OPTION_POLY] = 'Draw Polygon';
-  defaults.selections[GMAP_WIDGET_OPTION_BOUNDS] = 'Draw Bounds';
+  defaults.selections[GMAP_WIDGET_OPTION_BOUNDS] = 'Draw Bounds';*/
 
-  this.options = jQuery.extend(true, {}, defaults, options);
+  this.options = jQuery.extend({}, defaults, options);
   this.init();
 }
 

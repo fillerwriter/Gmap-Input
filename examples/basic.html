@@ -8,18 +8,18 @@
 <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
 <script type="text/javascript" src="../dist/Gmap-Input.js"></script>
 <script type="text/javascript">
-  var poly;
-  var map;
-
   $(document).ready(function(){
-    //$('<div>').text('test').css('width', '50px').css('height', '50px').css('background-color', '#F00').appendTo('body');
+    var widgetOptions = {};
+    widgetOptions[GMAP_WIDGET_OPTION_POLY] = 'Draw Polygon';
     $('.wkt').gmapInput({
       startPoint: {
         'lat': 41,
         'lon': -86,
         'zoom': 6
       },
-      'imagePath': '../dist/img'
+      'imagePath': '../dist/img',
+      'widgetOptions': widgetOptions,
+      'defaultWidgetOption': GMAP_WIDGET_OPTION_POLY
     });
   });
 </script>
