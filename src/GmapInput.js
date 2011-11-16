@@ -68,6 +68,7 @@
     this._defaults = defaults;
     this._name = pluginName;
     this._map = null;
+    this._bounds = null;
 
     this.init();
   }
@@ -93,6 +94,8 @@
       "map": this._map
     });
     
+    this._bounds = new google.maps.LatLngBounds();
+    
     google.maps.event.addListener(this._map, 'click', function(e) {
       $this._dblClickTimer = setTimeout(function() {
         $this.click(e);
@@ -109,7 +112,6 @@
 
     // Load data from element's value.
     if ($(this.element).val() != '') {
-      var bounds = new google.maps.LatLngBounds();
       try {
         var myGeoJSON = jQuery.parseJSON($(this.element).val());
         if (myGeoJSON) {
@@ -148,7 +150,7 @@
       }
       
       // Recenter map to show all loaded features.
-      
+      this._map.fitBounds(this._bounds);
       
       // reset back to no current polygon if we've loaded data
       var features = this._features.getFeatures();
@@ -279,11 +281,14 @@
   // Switch drawing setting to point drawing
   GmapInput.prototype.drawPoint = function (coordinate) {
     var $this = this;
+    var point = new google.maps.LatLng(coordinate[1], coordinate[0]);
     var marker = new GmapPointFeatureEdit({
       feature: new google.maps.Marker({
-        position: new google.maps.LatLng(coordinate[1], coordinate[0])
+        position: point
       })
     });
+
+    this._bounds.extend(point);
 
     var markerID = $this._features.addFeature(marker);
     marker.setFeatureID(markerID);
@@ -377,7 +382,10 @@
     var currentFeature = this._features.getCurrentFeature();
     if (currentFeature != undefined) {
       var path = currentFeature.getPath();
-      path.push(new google.maps.LatLng(coordinate[1], coordinate[0]));
+      var point = new google.maps.LatLng(coordinate[1], coordinate[0]);
+      path.push(point);
+
+      this._bounds.extend(point);
 
       this.data.addCoordinate(coordinate[1], coordinate[0]);
       $(this.element).val(this.data.stringify());
