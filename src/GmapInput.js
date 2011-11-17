@@ -45,7 +45,10 @@
         imagePath: 'img',
         featureMaxCount: FEATURE_COUNT_UNLIMITED,
         widgetOptions: {},
-        defaultWidgetOption: GMAP_WIDGET_OPTION_POINT
+        defaultWidgetOption: GMAP_WIDGET_OPTION_POINT,
+        mapOptions: {
+          mapTypeId: google.maps.MapTypeId.ROADMAP
+        }
       };
       
   defaults.widgetOptions[GMAP_WIDGET_OPTION_POINT] = 'Draw Point';
@@ -84,7 +87,7 @@
     var mapOptions = {
       zoom: this.options.startPoint.zoom,
       center: start,
-      mapTypeId: google.maps.MapTypeId.ROADMAP,
+      mapTypeId: this.options.mapOptions.mapTypeId,
       disableDoubleClickZoom: true
     };
 
