@@ -3,6 +3,7 @@ function GmapJSON(options) {
   this.data = [];
   
   this._currentFeature = -1;
+  this._count = 0;
   this.init();
 }
 
@@ -16,6 +17,7 @@ GmapJSON.prototype.loadGeoJSON = function(newData) {
   if (newData.type == 'GeometryCollection') {
     for (var i in newData.geometries) {
       internal.push(this._GeoJSON2Internal(newData.geometries[i]));
+      this._count++;
     }
   } else {
     internal = new Array(this._GeoJSON2Internal(newData));
@@ -61,6 +63,7 @@ GmapJSON.prototype._GeoJSON2Internal = function(feature) {
 // add feature
 GmapJSON.prototype.addFeature = function(featureType) {
   this._currentFeature++;
+  this._count++;
   this.data[this._currentFeature] = {
     "type": featureType,
     "coordinates": []
@@ -70,8 +73,9 @@ GmapJSON.prototype.addFeature = function(featureType) {
 
 // remove feature
 GmapJSON.prototype.removeFeature = function (featurePos) {
-  if (this.data[featurePos] != undefined) {
-    this.data.splice(featurePos, 1);
+  if (this.data[featurePos - 1] != undefined) {
+    this.data[featurePos - 1] = undefined;
+    this._count--;
     return true;
   }
   return false;
@@ -132,14 +136,16 @@ GmapJSON.prototype.stringify = function() {
 
 // Get. Returns a GeoJSON object with current data.
 GmapJSON.prototype.get = function() {
-  if (this.data.length == 0) {
+  if (this._count == 0) {
     return undefined;
-  } else if (this.data.length == 1) {
+  } else if (this._count == 1) {
     return this._internal2GeoJSON(this.data[0]);
   } else {
     var geoReturn = new Array();
     for (var i in this.data) {
-      geoReturn.push(this._internal2GeoJSON(this.data[i]));
+      if (this.data[i] != undefined) {
+        geoReturn.push(this._internal2GeoJSON(this.data[i]));
+      }
     }
     return {
       type: "GeometryCollection",

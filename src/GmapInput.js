@@ -100,9 +100,7 @@
     this._bounds = new google.maps.LatLngBounds();
     
     google.maps.event.addListener(this._map, 'click', function(e) {
-      $this._dblClickTimer = setTimeout(function() {
-        $this.click(e);
-      }, 200);
+      $this.click(e);
     });
 
     google.maps.event.addListener(this._map, 'dblclick', function(e) {
@@ -125,26 +123,26 @@
             for (var i in myData.geometries) {
               switch (myData.geometries[i].type) {
                 case 'Point':
-                  this.drawPoint(myData.geometries[i].coordinates);
+                  this.drawPoint(myData.geometries[i].coordinates, false);
                 break;
                 case 'LineString':
-                  this.drawLine(myData.geometries[i].coordinates);
+                  this.drawLine(myData.geometries[i].coordinates, false);
                 break;
                 case 'Polygon':
-                  this.drawPolygon(myData.geometries[i].coordinates[0]);
+                  this.drawPolygon(myData.geometries[i].coordinates[0], false);
                 break;
               }
             }
           } else {
             switch (myData.type) {
               case 'Point':
-                this.drawPoint(myData.coordinates);
+                this.drawPoint(myData.coordinates, false);
               break;
               case 'LineString':
-                this.drawLine(myData.coordinates);
+                this.drawLine(myData.coordinates, false);
               break;
               case 'Polygon':
-                this.drawPolygon(myData.coordinates[0]);
+                this.drawPolygon(myData.coordinates[0], false);
               break;
             }
           }
@@ -214,6 +212,13 @@
 
   // General click callback.
   GmapInput.prototype.click = function (e, feature, featureType) {
+    var $this = this;
+    this._dblClickTimer = setTimeout(function() {
+      $this._click(e, feature, featureType);
+    }, 200);
+  }
+  
+  GmapInput.prototype._click = function(e, feature, featureType) {
     var currentFeature = this._features.getCurrentFeature();
     if (this.options.mapState == MAP_STATE_DRAWING) {
       switch (this.options.currentFeatureType) {
@@ -267,12 +272,19 @@
       this.appendPoint(new Array(e.latLng.lng(), e.latLng.lat()));
       currentFeature.setEditState(GMAP_EDIT_STATE_STATIC);
       this._features.setCurrentFeature(null);
+    } else if (feature != undefined) {
+      // @TODO: This is still slightly buggy, probably has to do with the off by one issue.
+      var featureId = feature.getFeatureID();
+      feature.setMap(null);
+      this.data.removeFeature(featureId);
+      $(this.element).val(this.data.stringify());
+      
     }
   }
 
   // General rightclick callback.
   GmapInput.prototype.rightclick = function (e, feature, featureType) {
-  
+    
   }
 
   // General mouseup callback.
@@ -282,7 +294,10 @@
   }
 
   // Switch drawing setting to point drawing
-  GmapInput.prototype.drawPoint = function (coordinate) {
+  GmapInput.prototype.drawPoint = function (coordinate, updateData) {
+    if (updateData == undefined) {
+      updateData = true;
+    }
     var $this = this;
     var point = new google.maps.LatLng(coordinate[1], coordinate[0]);
     var marker = new GmapPointFeatureEdit({
@@ -309,13 +324,18 @@
       $this.mouseup(e, this, 'Point');
     });
 
-    this.data.addFeature('Point');
-    this.data.addCoordinate(coordinate[1], coordinate[0]);
-    $(this.element).val(this.data.stringify());
+    if (updateData) {
+      this.data.addFeature('Point');
+      this.data.addCoordinate(coordinate[1], coordinate[0]);
+      $(this.element).val(this.data.stringify());
+    }
   }
 
   // Switch drawing setting to line drawing
-  GmapInput.prototype.drawLine = function (coordinates) {
+  GmapInput.prototype.drawLine = function (coordinates, updateData) {
+    if (updateData == undefined) {
+      updateData = true;
+    }
     var $gmapinput = this;
 
     var line = new GmapPolyFeatureEdit({
@@ -340,15 +360,20 @@
       $gmapinput.mouseup(e, this, 'Line');
     });
 
-    this.data.addFeature('LineString');
+    if (updateData) {
+      this.data.addFeature('LineString');
+    }
 
     for (var i in coordinates) {
-      this.appendPoint(coordinates[i]);
+      this.appendPoint(coordinates[i], updateData);
     }
   }
 
   // Switch drawing setting to polygon drawing
-  GmapInput.prototype.drawPolygon = function (coordinates) {
+  GmapInput.prototype.drawPolygon = function (coordinates, updateData) {
+    if (updateData == undefined) {
+      updateData = true;
+    }
     var $gmapinput = this;
 
     var poly = new GmapPolyFeatureEdit({
@@ -373,15 +398,20 @@
       $gmapinput.mouseup(e, this, 'Polygon');
     });
 
-    this.data.addFeature('Polygon');
+    if (updateData) {
+      this.data.addFeature('Polygon');
+    }
 
     for (var i in coordinates) {
-      this.appendPoint(coordinates[i]);
+      this.appendPoint(coordinates[i], updateData);
     }
   }
 
   // Add coordinate to current feature. Really only applicable to lines and polygons
-  GmapInput.prototype.appendPoint = function(coordinate) {
+  GmapInput.prototype.appendPoint = function(coordinate, updateData) {
+    if (updateData == undefined) {
+      updateData = true;
+    }
     var currentFeature = this._features.getCurrentFeature();
     if (currentFeature != undefined) {
       var path = currentFeature.getPath();
@@ -390,8 +420,10 @@
 
       this._bounds.extend(point);
 
-      this.data.addCoordinate(coordinate[1], coordinate[0]);
-      $(this.element).val(this.data.stringify());
+      if (updateData) {
+        this.data.addCoordinate(coordinate[1], coordinate[0]);
+        $(this.element).val(this.data.stringify());
+      }
     }
   }
 
