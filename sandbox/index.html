@@ -26,6 +26,9 @@
       map: map,
       element: element
     });
+    map.fitBounds(featureManager.getBounds());
+    featureManager.removeFeatureAt(0);
+    map.fitBounds(featureManager.getBounds());
   });
 </script>
 <style type="text/css">

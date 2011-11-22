@@ -20,6 +20,7 @@ function FeatureManager(options) {
 }
 
 FeatureManager.prototype.init = function() {
+  var $this = this;
   if (this.options.map == undefined) {
    throw "Map must be defined"; 
   }
@@ -34,6 +35,19 @@ FeatureManager.prototype.init = function() {
   this._featureIterator = 0;
   this._element = this.options.element;
   this._geoJsonOut = new GmapJSON();
+  this._bounds = new google.maps.LatLngBounds();
+
+  google.maps.event.addListener(this._features, 'insert_at', function(index) {
+    $this._resetInternals();
+  });
+  
+  google.maps.event.addListener(this._features, 'remove_at', function(index, element) {
+    $this._resetInternals();
+  });
+  
+  google.maps.event.addListener(this._features, 'set_at', function(index, element) {
+    $this._resetInternals();
+  });
 
   if (jQuery(this._element).val() != '') {
     // Load geodata.
@@ -53,15 +67,27 @@ FeatureManager.prototype.init = function() {
 }
 
 FeatureManager.prototype.addFeature = function(feature) {
-  feature.setMap(this._map);
-  this._featureIterator++;
-  this._features[this._featureIterator] = feature;
+  // determine bounds.
+  var localBounds = new google.maps.LatLngBounds();
+  if (feature.getPath) {
+    var path = feature.getPath();
+    path.forEach(function(element, index) {
+      localBounds.extend(element);
+    });
+  } else if (feature.getPosition) {
+    localBounds.extend(feature.getPosition());
+  }
+  feature.set('localBounds', localBounds);
+  feature.set('fmPos', this._features.getLength());
 
-  return this._featureIterator;
+  this._features.push(feature);
+  this._bounds.union(localBounds);
+  feature.setMap(this._map);
 }
 
-FeatureManager.prototype.removeFeature = function(featureID) {
-  this._features[featureID].setMap(null);
+FeatureManager.prototype.removeFeatureAt = function(featureID) {
+  var feature = this._features.getAt(featureID);
+  feature.setMap(null);
   this._features.removeAt(featureID);
 }
 
@@ -71,6 +97,17 @@ FeatureManager.prototype.removeAllFeatures = function() {
   }
   this._features = new google.maps.MVCArray();
   this._currentFeatureID = undefined;
+}
+
+// If a feature is added, modified, or removed from our internal array, we need
+// to manage some internal properties to make sure everything works as expected.
+FeatureManager.prototype._resetInternals = function() {
+  var $this = this;
+  this._bounds = new google.maps.LatLngBounds();
+  this._features.forEach(function(element, i) {
+    $this._bounds.union(element.get('localBounds'));
+    element.set('fmPos', i);
+  });
 }
 
 FeatureManager.prototype.setCurrentFeature = function(featureID) {
@@ -86,11 +123,12 @@ FeatureManager.prototype.getCurrentFeature = function() {
 }
 
 FeatureManager.prototype.getFeatureAt = function(featureID) {
-  return this._features[featureID];
+  return this._features.getAt(featureID);
 }
 
 FeatureManager.prototype.getFeatures = function() {
-  return this._features;
+  // NOTE: If the returning array is modified, we can't guarantee no errors.
+  return this._features.getArray();
 }
 
 FeatureManager.prototype.getLength = function() {
@@ -103,4 +141,8 @@ FeatureManager.prototype.getMap = function() {
 
 FeatureManager.prototype.getElement = function() {
   return this._element;
+}
+
+FeatureManager.prototype.getBounds = function() {
+  return this._bounds;
 }
