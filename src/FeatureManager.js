@@ -116,7 +116,7 @@ FeatureManager.prototype.setCurrentFeature = function(featureID) {
 
 FeatureManager.prototype.getCurrentFeature = function() {
   if (this._currentFeatureID != null) {
-    return this._features[this._currentFeatureID];
+    return this._features.getAt(this._currentFeatureID);
   } else {
     return undefined;
   }
