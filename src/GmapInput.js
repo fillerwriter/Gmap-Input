@@ -13,12 +13,7 @@
   // Constants
   var MAP_STATE_PANNING = 'panning';
   var MAP_STATE_DRAWING = 'drawing';
-  
-  var DRAW_POINT = 'draw point';
-  var DRAW_LINE = 'draw line';
-  var DRAW_POLY = 'draw polygon';
-  var DRAW_BOUNDS = 'draw bounds';
-  
+
   var FEATURE_COUNT_UNLIMITED = -1;
 
   // undefined is used here as the undefined global
@@ -45,7 +40,7 @@
         imagePath: 'img',
         featureMaxCount: FEATURE_COUNT_UNLIMITED,
         widgetOptions: {},
-        defaultWidgetOption: GMAP_WIDGET_OPTION_POINT,
+        defaultWidgetOption: 'dummy',
         mapOptions: {
           mapTypeId: google.maps.MapTypeId.ROADMAP
         }
@@ -68,10 +63,14 @@
     this.options = $.extend( {}, defaults, options) ;
     this.data = new GmapJSON();
 
-    this._defaults = defaults;
-    this._name = pluginName;
-    this._map = null;
-    this._bounds = null;
+    this._defaults = defaults; // Default plugin options
+    this._name = pluginName; // Plugin name
+    this._map = null; // google.maps.Map
+    this._mapcontainer = null; // jQuery object representing wrapper
+    this._bounds = null; // google.maps.LatLngBounds
+    this._drawManager = null; // google.maps.drawing.DrawManager
+    this._dblClickTimer = null; // Timer object
+    this._features = null; // FeatureManager object
 
     this.init();
   }
@@ -79,130 +78,70 @@
   GmapInput.prototype.init = function () {
     var $this = this;
     this.options.mapState = MAP_STATE_PANNING;
-    this.options.currentFeatureType = DRAW_POINT;
+    this.options.currentFeatureType = 'dummy'; // @TODO: replace with google constant.
     this._dblClickTimer = undefined;
 
     this._mapcontainer = $(this.element).after('<div class="gmapInputMap"></div>').siblings('.gmapInputMap').get(0);
-    var start = new google.maps.LatLng(this.options.startPoint.lat, this.options.startPoint.lon);
+
+    // Create the map and various settings.
+    var startLatLng = new google.maps.LatLng(this.options.startPoint.lat, this.options.startPoint.lon);
     var mapOptions = {
       zoom: this.options.startPoint.zoom,
-      center: start,
+      center: startLatLng,
       mapTypeId: this.options.mapOptions.mapTypeId,
       disableDoubleClickZoom: true
     };
-
     this._map = new google.maps.Map(this._mapcontainer, mapOptions);
-    
+
+    // Set up support objects.
     this._features = new FeatureManager({
       "map": this._map
     });
-    
+
     this._bounds = new google.maps.LatLngBounds();
+
+    var drawManager = new google.maps.drawing.DrawingManager({
+      map: this._map,
+      markerOptions: {
+        draggable: true
+      },
+      polylineOptions: {
+        editable: true
+      },
+    });
     
-    google.maps.event.addListener(this._map, 'click', function(e) {
-      $this.click(e);
-    });
-
-    google.maps.event.addListener(this._map, 'dblclick', function(e) {
-      $this.doubleclick(e);
-    });
-
-    google.maps.event.addListener(this._map, 'rightclick', function(e) {
-      $this.rightclick(e);
-    });
-
-    // Load data from element's value.
-    if ($(this.element).val() != '') {
-      try {
-        var myGeoJSON = jQuery.parseJSON($(this.element).val());
-        if (myGeoJSON) {
-          this.data.loadGeoJSON(myGeoJSON);
-          var myData = this.data.get();
-          
-          if (myData.type == "GeometryCollection") {
-            for (var i in myData.geometries) {
-              switch (myData.geometries[i].type) {
-                case 'Point':
-                  this.drawPoint(myData.geometries[i].coordinates, false);
-                break;
-                case 'LineString':
-                  this.drawLine(myData.geometries[i].coordinates, false);
-                break;
-                case 'Polygon':
-                  this.drawPolygon(myData.geometries[i].coordinates[0], false);
-                break;
-              }
-            }
-          } else {
-            switch (myData.type) {
-              case 'Point':
-                this.drawPoint(myData.coordinates, false);
-              break;
-              case 'LineString':
-                this.drawLine(myData.coordinates, false);
-              break;
-              case 'Polygon':
-                this.drawPolygon(myData.coordinates[0], false);
-              break;
-            }
-          }
+    google.maps.event.addListener(drawManager, 'overlaycomplete', function(e) {
+      if (e.type != google.maps.drawing.OverlayType.MARKER) {
+        // Switch back to non-drawing mode after drawing a shape.
+        drawManager.setDrawingMode(null);
+  
+        // Add an event listener that selects the newly-drawn shape when the user
+        // mouses down on it.
+        var newShape = e.overlay;
+        newShape.type = e.type;
+        
+        if (e.type == 'polygon') {
+          var path = newShape.getPath();
+          google.maps.event.addListener(path, 'insert_at', function(index) {
+            alert(index);
+          });
         }
-      } catch(e) {
-      }
-      
-      // Recenter map to show all loaded features.
-      this._map.fitBounds(this._bounds);
-      
-      // reset back to no current polygon if we've loaded data
-      var features = this._features.getFeatures();
-      for (var i in features) {
-        features[i].setEditState(GMAP_EDIT_STATE_STATIC);
-      }
-      this._features.setCurrentFeature(null);
-    }
-
-    // Added dropdown widget
-    this._widget = new GmapDropdownWidget({
-      imagePath: this.options.imagePath,
-      selections: this.options.widgetOptions,
-      defaultSelection: this.options.defaultWidgetOption
-    });
-    
-    var widget = this._widget.get(0);
-    
-    $(widget).click(function() {
-      var settings = $this._widget.getStatus();
-      $this.options.mapState = (settings.currentState == 'active') ? MAP_STATE_DRAWING: MAP_STATE_PANNING;
-      //this.options.currentFeatureType = DRAW_POINT;
-      switch (settings.currentDrawOption) {
-        case GMAP_WIDGET_OPTION_POINT:
-          $this.options.currentFeatureType = DRAW_POINT;
-        break;
-        case GMAP_WIDGET_OPTION_LINE:
-          $this.options.currentFeatureType = DRAW_LINE;
-        break;
-        case GMAP_WIDGET_OPTION_POLY:
-          $this.options.currentFeatureType = DRAW_POLY;
-        break;
-        case GMAP_WIDGET_OPTION_BOUNDS:
-          $this.options.currentFeatureType = DRAW_BOUNDS;
-        break;
-      }
-
-      if ($this.options.mapState == MAP_STATE_PANNING) {
-        var currentFeature = $this._features.getCurrentFeature();
-        if (currentFeature) {
-          currentFeature.setEditState(GMAP_EDIT_STATE_STATIC);
-          $this._features.setCurrentFeature(null);
-        }
+        
+        google.maps.event.addListener(newShape, 'click', function() {
+          setSelection(newShape);
+        });
+        setSelection(newShape);
       }
     });
     
-    this._map.controls[google.maps.ControlPosition.TOP_RIGHT].push(widget);
-  };
+    function setSelection(shape) {
+        selectedShape = shape;
+        shape.setEditable(true);
+      }
+  }
 
   GmapInput.prototype.version = function() {
-    return '0.1';
+    return '0.2';
   }
 
   // Returns map object.
@@ -295,7 +234,7 @@
 
   // Switch drawing setting to point drawing
   GmapInput.prototype.drawPoint = function (coordinate, updateData) {
-    if (updateData == undefined) {
+    /*if (updateData == undefined) {
       updateData = true;
     }
     var $this = this;
@@ -328,12 +267,12 @@
       this.data.addFeature('Point');
       this.data.addCoordinate(coordinate[1], coordinate[0]);
       $(this.element).val(this.data.stringify());
-    }
+    }*/
   }
 
   // Switch drawing setting to line drawing
   GmapInput.prototype.drawLine = function (coordinates, updateData) {
-    if (updateData == undefined) {
+    /*if (updateData == undefined) {
       updateData = true;
     }
     var $gmapinput = this;
@@ -366,12 +305,12 @@
 
     for (var i in coordinates) {
       this.appendPoint(coordinates[i], updateData);
-    }
+    }*/
   }
 
   // Switch drawing setting to polygon drawing
   GmapInput.prototype.drawPolygon = function (coordinates, updateData) {
-    if (updateData == undefined) {
+    /*if (updateData == undefined) {
       updateData = true;
     }
     var $gmapinput = this;
@@ -404,12 +343,12 @@
 
     for (var i in coordinates) {
       this.appendPoint(coordinates[i], updateData);
-    }
+    }*/
   }
 
   // Add coordinate to current feature. Really only applicable to lines and polygons
   GmapInput.prototype.appendPoint = function(coordinate, updateData) {
-    if (updateData == undefined) {
+    /*if (updateData == undefined) {
       updateData = true;
     }
     var currentFeature = this._features.getCurrentFeature();
@@ -424,7 +363,7 @@
         this.data.addCoordinate(coordinate[1], coordinate[0]);
         $(this.element).val(this.data.stringify());
       }
-    }
+    }*/
   }
 
   // A really lightweight plugin wrapper around the constructor,

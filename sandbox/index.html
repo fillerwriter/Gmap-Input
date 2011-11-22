@@ -4,30 +4,27 @@
 <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
 <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
 <title>Google Maps JavaScript API v3 Example: Polyline Complex</title>
-<script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?sensor=false"></script>
+<script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?sensor=false&libraries=drawing"></script>
 <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
 <script type="text/javascript" src="../src/GmapJSON.js"></script>
-<script type="text/javascript" src="../src/GmapPolyFeatureEdit.js"></script>
-<script type="text/javascript" src="../src/GmapPointFeatureEdit.js"></script>
+<script type="text/javascript" src="../src/GeoJSON.js"></script>
 <script type="text/javascript" src="../src/FeatureManager.js"></script>
-<script type="text/javascript" src="../src/GmapDropdownWidget.js"></script>
-<script type="text/javascript" src="../src/GmapInput.js"></script>
 <script type="text/javascript">
   $(document).ready(function(){
-    var widgetOptions = {};
-    widgetOptions[GMAP_WIDGET_OPTION_POLY] = 'Draw Polygon';
-    $('.wkt').gmapInput({
-      startPoint: {
-        'lat': 41,
-        'lon': -86,
-        'zoom': 6
-      },
-      'imagePath': '../dist/img',
-      mapOptions: {
-        mapTypeId: google.maps.MapTypeId.HYBRID
-      }
-      //'widgetOptions': widgetOptions,
-      //'defaultWidgetOption': GMAP_WIDGET_OPTION_POLY
+    $('textarea').after('<div class="gmapInputMap"></div>');
+    var element = $('textarea');
+    var mapDOM = $('.gmapInputMap').get(0);
+    var startLatLng = new google.maps.LatLng(41.5, -86);
+    var mapOptions = {
+      zoom: 8,
+      center: startLatLng,
+      disableDoubleClickZoom: true,
+      mapTypeId: google.maps.MapTypeId.ROADMAP
+    };
+    var map = new google.maps.Map(mapDOM, mapOptions);
+    var featureManager = new FeatureManager({
+      map: map,
+      element: element
     });
   });
 </script>
