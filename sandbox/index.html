@@ -9,26 +9,10 @@
 <script type="text/javascript" src="../src/GmapJSON.js"></script>
 <script type="text/javascript" src="../src/GeoJSON.js"></script>
 <script type="text/javascript" src="../src/FeatureManager.js"></script>
+<script type="text/javascript" src="../src/GmapInput.js"></script>
 <script type="text/javascript">
   $(document).ready(function(){
-    $('textarea').after('<div class="gmapInputMap"></div>');
-    var element = $('textarea');
-    var mapDOM = $('.gmapInputMap').get(0);
-    var startLatLng = new google.maps.LatLng(41.5, -86);
-    var mapOptions = {
-      zoom: 8,
-      center: startLatLng,
-      disableDoubleClickZoom: true,
-      mapTypeId: google.maps.MapTypeId.ROADMAP
-    };
-    var map = new google.maps.Map(mapDOM, mapOptions);
-    var featureManager = new FeatureManager({
-      map: map,
-      element: element
-    });
-    map.fitBounds(featureManager.getBounds());
-    featureManager.removeFeatureAt(0);
-    map.fitBounds(featureManager.getBounds());
+    $('.wkt').gmapInput({});
   });
 </script>
 <style type="text/css">

@@ -40,16 +40,16 @@
         imagePath: 'img',
         featureMaxCount: FEATURE_COUNT_UNLIMITED,
         widgetOptions: {},
-        defaultWidgetOption: 'dummy',
+        defaultWidgetOption: 'dummy', // @TODO: Use DrawManager constants.
         mapOptions: {
           mapTypeId: google.maps.MapTypeId.ROADMAP
         }
       };
-      
-  defaults.widgetOptions[GMAP_WIDGET_OPTION_POINT] = 'Draw Point';
+  // @TODO: Use DrawManager constants.
+  /*defaults.widgetOptions[GMAP_WIDGET_OPTION_POINT] = 'Draw Point';
   defaults.widgetOptions[GMAP_WIDGET_OPTION_LINE] = 'Draw Line';
   defaults.widgetOptions[GMAP_WIDGET_OPTION_POLY] = 'Draw Polygon';
-  defaults.widgetOptions[GMAP_WIDGET_OPTION_BOUNDS] = 'Draw Bounds';
+  defaults.widgetOptions[GMAP_WIDGET_OPTION_BOUNDS] = 'Draw Bounds';*/
 
   // The actual plugin constructor
   function GmapInput( element, options ) {
@@ -95,12 +95,15 @@
 
     // Set up support objects.
     this._features = new FeatureManager({
-      "map": this._map
+      map: this._map,
+      element: this.element
     });
+    
+    if (this._features.getLength() > 0) {
+      this._map.fitBounds(this._features.getBounds());
+    }
 
-    this._bounds = new google.maps.LatLngBounds();
-
-    var drawManager = new google.maps.drawing.DrawingManager({
+    this._drawManager = new google.maps.drawing.DrawingManager({
       map: this._map,
       markerOptions: {
         draggable: true
@@ -110,10 +113,12 @@
       },
     });
     
-    google.maps.event.addListener(drawManager, 'overlaycomplete', function(e) {
-      if (e.type != google.maps.drawing.OverlayType.MARKER) {
+    google.maps.event.addListener(this._drawManager, 'overlaycomplete', function(e) {
+      var newShape = e.overlay;
+      $this._features.addFeature(newShape);
+      /*if (e.type != google.maps.drawing.OverlayType.MARKER) {
         // Switch back to non-drawing mode after drawing a shape.
-        drawManager.setDrawingMode(null);
+        this.setDrawingMode(null);
   
         // Add an event listener that selects the newly-drawn shape when the user
         // mouses down on it.
@@ -131,7 +136,7 @@
           setSelection(newShape);
         });
         setSelection(newShape);
-      }
+      }*/
     });
     
     function setSelection(shape) {

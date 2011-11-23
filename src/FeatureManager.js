@@ -37,18 +37,6 @@ FeatureManager.prototype.init = function() {
   this._geoJsonOut = new GmapJSON();
   this._bounds = new google.maps.LatLngBounds();
 
-  google.maps.event.addListener(this._features, 'insert_at', function(index) {
-    $this._resetInternals();
-  });
-  
-  google.maps.event.addListener(this._features, 'remove_at', function(index, element) {
-    $this._resetInternals();
-  });
-  
-  google.maps.event.addListener(this._features, 'set_at', function(index, element) {
-    $this._resetInternals();
-  });
-
   if (jQuery(this._element).val() != '') {
     // Load geodata.
     var rawData = GeoJSON(jQuery.parseJSON(jQuery(this._element).val()));
@@ -64,6 +52,18 @@ FeatureManager.prototype.init = function() {
       }
     }
   }
+
+  google.maps.event.addListener(this._features, 'insert_at', function(index) {
+    $this._resetInternals();
+  });
+  
+  google.maps.event.addListener(this._features, 'remove_at', function(index, element) {
+    $this._resetInternals();
+  });
+  
+  google.maps.event.addListener(this._features, 'set_at', function(index, element) {
+    $this._resetInternals();
+  });
 }
 
 FeatureManager.prototype.addFeature = function(feature) {
@@ -145,4 +145,11 @@ FeatureManager.prototype.getElement = function() {
 
 FeatureManager.prototype.getBounds = function() {
   return this._bounds;
+}
+
+FeatureManager.prototype.getGeoJSON = function() {
+  var geoJSON = {};
+  this._features.forEach(element, i) {
+    
+  
 }
