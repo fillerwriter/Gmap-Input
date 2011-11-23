@@ -149,7 +149,33 @@ FeatureManager.prototype.getBounds = function() {
 
 FeatureManager.prototype.getGeoJSON = function() {
   var geoJSON = {};
-  this._features.forEach(element, i) {
+  var $this = this;
+  if (this._features.getLength() == 0) {
     
-  
+  } else if (this._features.getLength() == 1) {
+    geoJSON = this._GeoJSONParse(this.features.getAt(0));
+  } else {
+    var geometries = new Array();
+    this._features.forEach(function(element, i) {
+      geometries.push($this._GeoJSONParse(element));
+    });
+    geoJSON = {
+      type: "GeometryCollection",
+      geometries: geometries
+    }
+  }
+  return geoJSON;
+}
+
+// takes a single google overlay element, returns geojson snippet
+FeatureManager.prototype._GeoJSONParse = function(element) {
+  var properties = element.get('geojsonproperties');
+  if (element.getPosition) {
+    var pos = element.getPosition();
+    return {
+      type: "Point",
+      coordinates: [pos.lng(), pos.lat()],
+      properties: properties
+    }
+  }
 }
