@@ -61,7 +61,6 @@
     // is generally empty because we don't want to alter
     // the default options for future instances of the plugin
     this.options = $.extend( {}, defaults, options) ;
-    this.data = new GmapJSON();
 
     this._defaults = defaults; // Default plugin options
     this._name = pluginName; // Plugin name
@@ -98,45 +97,62 @@
       map: this._map,
       element: this.element
     });
-    
+
     if (this._features.getLength() > 0) {
       this._map.fitBounds(this._features.getBounds());
     }
 
+    // @TODO: Use options passed in from settings/defaults.
     this._drawManager = new google.maps.drawing.DrawingManager({
       map: this._map,
+      drawingControlOptions: {
+        drawingModes: [
+          google.maps.drawing.OverlayType.MARKER,
+          google.maps.drawing.OverlayType.POLYLINE,
+          google.maps.drawing.OverlayType.POLYGON
+        ],
+        position: google.maps.ControlPosition.TOP_LEFT
+      },
       markerOptions: {
         draggable: true
       },
       polylineOptions: {
         editable: true
-      },
+      }
     });
-    
+
+    // Set up our global listeners
+    google.maps.event.addListener(this._map, 'click', function(e) {
+      $this.click(e);
+    });
     google.maps.event.addListener(this._drawManager, 'overlaycomplete', function(e) {
       var newShape = e.overlay;
       $this._features.addFeature(newShape);
-      /*if (e.type != google.maps.drawing.OverlayType.MARKER) {
+      $($this.element).val(JSON.stringify($this._features.getGeoJSON()));
+
+      if (e.type != google.maps.drawing.OverlayType.MARKER) {
         // Switch back to non-drawing mode after drawing a shape.
         this.setDrawingMode(null);
-  
+        $this._features.setCurrentFeature(newShape.get('fmPos'));
+
         // Add an event listener that selects the newly-drawn shape when the user
         // mouses down on it.
-        var newShape = e.overlay;
         newShape.type = e.type;
         
         if (e.type == 'polygon') {
           var path = newShape.getPath();
           google.maps.event.addListener(path, 'insert_at', function(index) {
-            alert(index);
+            var currentFeature = $this._features.getCurrentFeature();
+            $this._features.modifyFeature(currentFeature, currentFeature.get('fmPos'));
           });
         }
         
         google.maps.event.addListener(newShape, 'click', function() {
+          $this._features.setCurrentFeature(newShape.get('fmPos'));
           setSelection(newShape);
         });
         setSelection(newShape);
-      }*/
+      }
     });
     
     function setSelection(shape) {
@@ -163,7 +179,13 @@
   }
   
   GmapInput.prototype._click = function(e, feature, featureType) {
-    var currentFeature = this._features.getCurrentFeature();
+    if (feature == undefined) {
+      var currentFeature = this._features.getCurrentFeature();
+      currentFeature.setEditable(false);
+      this._features.setCurrentFeature(null);
+      $(this.element).val(JSON.stringify(this._features.getGeoJSON()));
+    }
+    /*var currentFeature = this._features.getCurrentFeature();
     if (this.options.mapState == MAP_STATE_DRAWING) {
       switch (this.options.currentFeatureType) {
         case DRAW_POINT:
@@ -205,7 +227,7 @@
         }
         this._features.setCurrentFeature(null);
       }
-    }
+    }*/
   }
 
   // General doubleclick callback.
@@ -235,140 +257,6 @@
   GmapInput.prototype.mouseup = function (e, feature, featureType) {
     this.data.replaceCoordinate(e.latLng.lng(), e.latLng.lat(), e.featureID, feature.getFeatureID() - 1);
     $(this.element).val(this.data.stringify());
-  }
-
-  // Switch drawing setting to point drawing
-  GmapInput.prototype.drawPoint = function (coordinate, updateData) {
-    /*if (updateData == undefined) {
-      updateData = true;
-    }
-    var $this = this;
-    var point = new google.maps.LatLng(coordinate[1], coordinate[0]);
-    var marker = new GmapPointFeatureEdit({
-      feature: new google.maps.Marker({
-        position: point
-      })
-    });
-
-    this._bounds.extend(point);
-
-    var markerID = $this._features.addFeature(marker);
-    marker.setFeatureID(markerID);
-    marker.setEditState(GMAP_EDIT_STATE_EDIT);
-
-    google.maps.event.addListener(marker, 'click', function(e) {
-      $this.click(e, this, 'Point');
-    });
-
-    google.maps.event.addListener(marker, 'dblclick', function(e) {
-      $this.doubleclick(e, this, 'Point');
-    });
-    
-    google.maps.event.addListener(marker, 'mouseup', function(e) {
-      $this.mouseup(e, this, 'Point');
-    });
-
-    if (updateData) {
-      this.data.addFeature('Point');
-      this.data.addCoordinate(coordinate[1], coordinate[0]);
-      $(this.element).val(this.data.stringify());
-    }*/
-  }
-
-  // Switch drawing setting to line drawing
-  GmapInput.prototype.drawLine = function (coordinates, updateData) {
-    /*if (updateData == undefined) {
-      updateData = true;
-    }
-    var $gmapinput = this;
-
-    var line = new GmapPolyFeatureEdit({
-      feature: new google.maps.Polyline(),
-      "imagePath": this.options.imagePath
-    });
-
-    var lineID = $gmapinput._features.addFeature(line);
-    line.setFeatureID(lineID);
-    $gmapinput._features.setCurrentFeature(lineID);
-    line.setEditState(GMAP_EDIT_STATE_EDIT);
-
-    google.maps.event.addListener(line, 'click', function(e) {
-      $gmapinput.click(e, this, 'Line');
-    });
-
-    google.maps.event.addListener(line, 'dblclick', function(e) {
-      $gmapinput.doubleclick(e, this, 'Line');
-    });
-
-    google.maps.event.addListener(line, 'mouseup', function(e) {
-      $gmapinput.mouseup(e, this, 'Line');
-    });
-
-    if (updateData) {
-      this.data.addFeature('LineString');
-    }
-
-    for (var i in coordinates) {
-      this.appendPoint(coordinates[i], updateData);
-    }*/
-  }
-
-  // Switch drawing setting to polygon drawing
-  GmapInput.prototype.drawPolygon = function (coordinates, updateData) {
-    /*if (updateData == undefined) {
-      updateData = true;
-    }
-    var $gmapinput = this;
-
-    var poly = new GmapPolyFeatureEdit({
-      feature: new google.maps.Polygon(),
-      "imagePath": this.options.imagePath
-    });
-
-    var polyID = $gmapinput._features.addFeature(poly);
-    poly.setFeatureID(polyID);
-    $gmapinput._features.setCurrentFeature(polyID);
-    poly.setEditState(GMAP_EDIT_STATE_EDIT);
-
-    google.maps.event.addListener(poly, 'click', function(e) {
-      $gmapinput.click(e, this, 'Polygon');
-    });
-
-    google.maps.event.addListener(poly, 'dblclick', function(e) {
-      $gmapinput.doubleclick(e, this, 'Polygon');
-    });
-
-    google.maps.event.addListener(poly, 'mouseup', function(e) {
-      $gmapinput.mouseup(e, this, 'Polygon');
-    });
-
-    if (updateData) {
-      this.data.addFeature('Polygon');
-    }
-
-    for (var i in coordinates) {
-      this.appendPoint(coordinates[i], updateData);
-    }*/
-  }
-
-  // Add coordinate to current feature. Really only applicable to lines and polygons
-  GmapInput.prototype.appendPoint = function(coordinate, updateData) {
-    /*if (updateData == undefined) {
-      updateData = true;
-    }
-    var currentFeature = this._features.getCurrentFeature();
-    if (currentFeature != undefined) {
-      var path = currentFeature.getPath();
-      var point = new google.maps.LatLng(coordinate[1], coordinate[0]);
-      path.push(point);
-
-      this._bounds.extend(point);
-
-      if (updateData) {
-        this.data.addCoordinate(coordinate[1], coordinate[0]);
-        $(this.element).val(this.data.stringify());
-      }
-    }*/
   }
 
   // A really lightweight plugin wrapper around the constructor,

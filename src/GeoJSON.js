@@ -151,7 +151,7 @@ var GeoJSON = function( geojson, options ){
 			}else{
 				obj = [];
 				for (var i = 0; i < geojson.geometries.length; i++){
-					obj.push(_geometryToGoogleMaps(geojson.geometries[i], opts));
+					obj.push(_geometryToGoogleMaps(geojson.geometries[i], opts, geojson.geometries[i].properties));
 				}
 			}
 			break;
@@ -166,7 +166,7 @@ var GeoJSON = function( geojson, options ){
 		
 		case "Point": case "MultiPoint": case "LineString": case "MultiLineString": case "Polygon": case "MultiPolygon":
 			obj = geojson.coordinates
-				? obj = _geometryToGoogleMaps(geojson, opts)
+				? obj = _geometryToGoogleMaps(geojson, opts, geojson.properties)
 				: _error("Invalid GeoJSON object: Geometry object missing \"coordinates\" member.");
 			break;
 		

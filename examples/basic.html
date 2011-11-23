@@ -4,13 +4,11 @@
 <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
 <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
 <title>Google Maps JavaScript API v3 Example: Polyline Complex</title>
-<script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?sensor=false"></script>
+<script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?sensor=false&libraries=drawing"></script>
 <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
 <script type="text/javascript" src="../dist/Gmap-Input.js"></script>
 <script type="text/javascript">
   $(document).ready(function(){
-    var widgetOptions = {};
-    widgetOptions[GMAP_WIDGET_OPTION_POLY] = 'Draw Polygon';
     $('.wkt').gmapInput({
       startPoint: {
         'lat': 41,
@@ -18,8 +16,6 @@
         'zoom': 6
       },
       'imagePath': '../dist/img',
-      'widgetOptions': widgetOptions,
-      'defaultWidgetOption': GMAP_WIDGET_OPTION_POLY
     });
   });
 </script>

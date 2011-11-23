@@ -3,7 +3,9 @@
 function FeatureManager(options) {
   var defaults = {
     map: undefined,
-    element: undefined
+    element: undefined,
+    geojson: undefined,
+    forceGeoCollection: false // If true, always output GeoCollection if only one point.
   };
   
   this.options = jQuery.extend( {}, defaults, options);
@@ -13,7 +15,6 @@ function FeatureManager(options) {
   this._currentFeatureId = null;
   this._featureIterator = null;
   this._element = null;
-  this._geoJsonOut = null;
   this._bounds = null;
 
   this.init();
@@ -25,8 +26,8 @@ FeatureManager.prototype.init = function() {
    throw "Map must be defined"; 
   }
 
-  if (this.options.element == undefined) {
-   throw "Element must be defined"; 
+  if (this.options.element == undefined && this.options.geojson == undefined) {
+   throw "Either geojson or element must be defined"; 
   }
   
   this._map = this.options.map;
@@ -34,12 +35,18 @@ FeatureManager.prototype.init = function() {
   this._currentFeatureID = undefined;
   this._featureIterator = 0;
   this._element = this.options.element;
-  this._geoJsonOut = new GmapJSON();
   this._bounds = new google.maps.LatLngBounds();
 
+  var geojson = undefined;
   if (jQuery(this._element).val() != '') {
+    geojson = jQuery.parseJSON(jQuery(this._element).val());
+  } else if (this.options.geojson != undefined) {
+    geojson = this.options.geojson;
+  }
+
+  if (geojson) {
     // Load geodata.
-    var rawData = GeoJSON(jQuery.parseJSON(jQuery(this._element).val()));
+    var rawData = GeoJSON(geojson);
     if (rawData.type == 'Error') {
       alert("ERROR");
     } else {
@@ -83,6 +90,22 @@ FeatureManager.prototype.addFeature = function(feature) {
   this._features.push(feature);
   this._bounds.union(localBounds);
   feature.setMap(this._map);
+}
+
+FeatureManager.prototype.modifyFeature = function(feature, featureID) {
+  var currentFeature = this._features.getAt(featureID);
+  // determine bounds.
+  var localBounds = new google.maps.LatLngBounds();
+  if (feature.getPath) {
+    var path = feature.getPath();
+    path.forEach(function(element, index) {
+      localBounds.extend(element);
+    });
+  } else if (feature.getPosition) {
+    localBounds.extend(feature.getPosition());
+  }
+  feature.set('localBounds', localBounds);
+  this._features.setAt(featureID, feature);
 }
 
 FeatureManager.prototype.removeFeatureAt = function(featureID) {
@@ -152,7 +175,7 @@ FeatureManager.prototype.getGeoJSON = function() {
   var $this = this;
   if (this._features.getLength() == 0) {
     
-  } else if (this._features.getLength() == 1) {
+  } else if (this.options.forceGeoCollection == false && this._features.getLength() == 1) {
     geoJSON = this._GeoJSONParse(this.features.getAt(0));
   } else {
     var geometries = new Array();
@@ -169,8 +192,35 @@ FeatureManager.prototype.getGeoJSON = function() {
 
 // takes a single google overlay element, returns geojson snippet
 FeatureManager.prototype._GeoJSONParse = function(element) {
-  var properties = element.get('geojsonproperties');
-  if (element.getPosition) {
+  var $this = this;
+  var properties = element.get('geojsonProperties');
+  if (element.getPaths) {
+    var paths = element.getPaths();
+    var coordinates = new Array();
+    paths.forEach(function(path, i) {
+      var sub = new Array();
+      path.forEach(function(coor, j) {
+        sub.push([coor.lng(), coor.lat()]);
+      });
+      coordinates.push(sub);
+    });
+    return {
+      type: "Polygon",
+      coordinates: coordinates,
+      properties: properties
+    }
+  } else if (element.getPath) {
+    var path = element.getPath();
+    var coordinates = new Array();
+    path.forEach(function(position, i) {
+      coordinates.push(position.lng(), position.lat());
+    });
+    return {
+      type: "LineString",
+      coordinates: coordinates,
+      properties: properties
+    }
+  } else if (element.getPosition) {
     var pos = element.getPosition();
     return {
       type: "Point",
