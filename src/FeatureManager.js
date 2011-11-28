@@ -213,7 +213,7 @@ FeatureManager.prototype._GeoJSONParse = function(element) {
     var path = element.getPath();
     var coordinates = new Array();
     path.forEach(function(position, i) {
-      coordinates.push(position.lng(), position.lat());
+      coordinates.push([position.lng(), position.lat()]);
     });
     return {
       type: "LineString",
