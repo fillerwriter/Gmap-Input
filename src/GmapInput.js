@@ -37,6 +37,7 @@
           'lon': -87.624333,
           'zoom': 7
         },
+        properties: {}, // Key/Value pairs to save for each item.
         imagePath: 'img',
         featureMaxCount: FEATURE_COUNT_UNLIMITED,
         widgetOptions: {},
@@ -151,6 +152,21 @@
           $this._features.setCurrentFeature(newShape.get('fmPos'));
           setSelection(newShape);
         });
+        
+        // TMP: For AFF.
+        /*google.maps.event.addListener(newShape, 'dblclick', function() {
+          var infowindow = new google.maps.InfoWindow({
+            content: "<p>Test</p>"
+          });
+          var localBounds = this.get("localBounds");
+          if (localBounds) {
+            infowindow.open($this._map, localBounds.getCenter()); 
+          }
+          alert("HI");
+        });*/
+        
+        // END TMP.
+        
         setSelection(newShape);
       }
     });
@@ -181,9 +197,11 @@
   GmapInput.prototype._click = function(e, feature, featureType) {
     if (feature == undefined) {
       var currentFeature = this._features.getCurrentFeature();
-      currentFeature.setEditable(false);
-      this._features.setCurrentFeature(null);
-      $(this.element).val(JSON.stringify(this._features.getGeoJSON()));
+      if (currentFeature) {
+        currentFeature.setEditable(false);
+        this._features.setCurrentFeature(null);
+        $(this.element).val(JSON.stringify(this._features.getGeoJSON()));
+      }
     }
     /*var currentFeature = this._features.getCurrentFeature();
     if (this.options.mapState == MAP_STATE_DRAWING) {
@@ -233,19 +251,6 @@
   // General doubleclick callback.
   GmapInput.prototype.doubleclick = function (e, feature, featureType) {
     clearTimeout(this._dblClickTimer);
-    var currentFeature = this._features.getCurrentFeature();
-    if (currentFeature != undefined) {
-      this.appendPoint(new Array(e.latLng.lng(), e.latLng.lat()));
-      currentFeature.setEditState(GMAP_EDIT_STATE_STATIC);
-      this._features.setCurrentFeature(null);
-    } else if (feature != undefined) {
-      // @TODO: This is still slightly buggy, probably has to do with the off by one issue.
-      var featureId = feature.getFeatureID();
-      feature.setMap(null);
-      this.data.removeFeature(featureId);
-      $(this.element).val(this.data.stringify());
-      
-    }
   }
 
   // General rightclick callback.

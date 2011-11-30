@@ -176,7 +176,7 @@ FeatureManager.prototype.getGeoJSON = function() {
   if (this._features.getLength() == 0) {
     
   } else if (this.options.forceGeoCollection == false && this._features.getLength() == 1) {
-    geoJSON = this._GeoJSONParse(this.features.getAt(0));
+    geoJSON = this._GeoJSONParse(this._features.getAt(0));
   } else {
     var geometries = new Array();
     this._features.forEach(function(element, i) {
