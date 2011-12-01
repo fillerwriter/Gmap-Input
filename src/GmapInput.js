@@ -46,6 +46,7 @@
           google.maps.drawing.OverlayType.POLYGON
         ],
         defaultWidgetOption: null,
+        forceGeoCollection: false,
         mapOptions: {
           mapTypeId: google.maps.MapTypeId.ROADMAP
         }
@@ -95,7 +96,8 @@
     // Set up support objects.
     this._features = new FeatureManager({
       map: this._map,
-      element: this.element
+      element: this.element,
+      forceGeoCollection: this.options.forceGeoCollection
     });
 
     var initialFeatureCount = this._features.getLength();
