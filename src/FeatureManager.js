@@ -75,15 +75,25 @@ FeatureManager.prototype.init = function() {
 
 FeatureManager.prototype.addFeature = function(feature) {
   // determine bounds.
+  var featureType = undefined;
   var localBounds = new google.maps.LatLngBounds();
-  if (feature.getPath) {
+  if (feature.getPaths) {
+    featureType = 'polygon';
+    var path = feature.getPath();
+    path.forEach(function(element, index) {
+      localBounds.extend(element);
+    });
+  } else if (feature.getPath) {
+    featureType = 'polyline';
     var path = feature.getPath();
     path.forEach(function(element, index) {
       localBounds.extend(element);
     });
   } else if (feature.getPosition) {
+    featureType = 'marker';
     localBounds.extend(feature.getPosition());
   }
+  feature.set('type', featureType);
   feature.set('localBounds', localBounds);
   feature.set('fmPos', this._features.getLength());
 

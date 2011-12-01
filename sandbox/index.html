@@ -18,6 +18,10 @@
         google.maps.drawing.OverlayType.POLYLINE,
         google.maps.drawing.OverlayType.POLYGON
       ],
+      properties: {
+        test: 1,
+        test2: 2
+      },
       mapOptions: {
         mapTypeId: google.maps.MapTypeId.HYBRID
       }
@@ -40,7 +44,7 @@
 </head>
 <body class="test">
   <form>
-    <textarea class="wkt" style="width: 500px; height: 200px;"></textarea>
+    <textarea class="wkt" style="width: 500px; height: 200px;">{"type":"Polygon","coordinates":[[[-88.33844432812498,42.28721906894016],[-87.94293651562498,41.30438069496938],[-86.96515331249998,42.724573394991154],[-87.64630565624998,42.98230181563832],[-88.55817089062498,42.98230181563832],[-88.56915721874998,42.56294709629938],[-89.26129589062498,42.55485476004601],[-89.26129589062498,42.034763518091296],[-88.87677440624998,41.81406252889568]]],"properties":{"test":"234","test2":"2"}}</textarea>
   </form>
 </body>
 </html>

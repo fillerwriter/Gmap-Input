@@ -37,7 +37,7 @@
           'lon': -87.624333,
           'zoom': 7
         },
-        properties: {}, // Key/Value pairs to save for each item.
+        properties: undefined, // Key/Value pairs to save for each item.
         imagePath: 'img',
         featureMaxCount: FEATURE_COUNT_UNLIMITED,
         widgetOptions: [
@@ -98,8 +98,15 @@
       element: this.element
     });
 
-    if (this._features.getLength() > 0) {
+    var initialFeatureCount = this._features.getLength();
+    if (initialFeatureCount > 0) {
       this._map.fitBounds(this._features.getBounds());
+      
+      for (var i = 0; i < initialFeatureCount; i++) {
+        var feature = this._features.getFeatureAt(i);
+        this.featureEventsRegister(feature);
+      }
+      
     }
 
     // @TODO: Use options passed in from settings/defaults.
@@ -117,63 +124,46 @@
       }
     });
 
+    var infoContent = "";
+    if ($this.options.properties) {
+      infoContent += "<form class='map-property-form'>";
+      for (var key in $this.options.properties) {
+        infoContent += "<div class='" + key + "-wrapper'><label>" + key + ":</label><input name='" + key + "-input' class='" + key + "-input' value='" + $this.options.properties[key] + "'/></div>";
+      }
+      infoContent += "<div><input type='submit' value='Save' /></form>";
+    }
+    infoContent += "<p><a class='deleteLink' href='#'>Delete</a></p>";
+
     this._infoWindow = new google.maps.InfoWindow({
-      content: "<p><a class='deleteLink' href='#'>Delete</a></p>",
+      content: infoContent,
     });
 
     // Set up our global listeners
     google.maps.event.addListener(this._map, 'click', function(e) {
       $this.click(e);
     });
+
     google.maps.event.addListener(this._drawManager, 'overlaycomplete', function(e) {
       var newShape = e.overlay;
+      if ($this.options.properties) {
+        newShape.set('geojsonProperties', $this.options.properties);
+      }
       $this._features.addFeature(newShape);
       $($this.element).val(JSON.stringify($this._features.getGeoJSON()));
 
-      if (e.type != google.maps.drawing.OverlayType.MARKER) {
-        // Switch back to non-drawing mode after drawing a shape.
-        this.setDrawingMode(null);
-        $this._features.setCurrentFeature(newShape.get('fmPos'));
+      this.setDrawingMode(null);
+      $this._features.setCurrentFeature(newShape.get('fmPos'));
 
-        // Add an event listener that selects the newly-drawn shape when the user
-        // mouses down on it.
-        newShape.type = e.type;
-        
-        if (e.type == 'polygon') {
-          var path = newShape.getPath();
-          google.maps.event.addListener(path, 'insert_at', function(index) {
-            var currentFeature = $this._features.getCurrentFeature();
-            $this._features.modifyFeature(currentFeature, currentFeature.get('fmPos'));
-          });
-        }
-
-        google.maps.event.addListener(newShape, 'click', function(e) {
-          $this._features.setCurrentFeature(newShape.get('fmPos'));
-          setSelection(newShape);
-        });
-
-        google.maps.event.addListener(newShape, 'dblclick', function(e) {
-          var localBounds = this.get("localBounds");
-          $this._infoWindow.setPosition(localBounds.getCenter());
-          
-          $this._infoWindow.open($this._map);
-          // @TODO: Move to a better place architecturally.
-          $('.deleteLink').click(function(event) {
-            event.preventDefault();
-            var current = $this._features.getCurrentFeature();
-            $this._features.removeFeatureAt(current.get('fmPos'));
-            $($this.element).val(JSON.stringify($this._features.getGeoJSON()));
-            $this._infoWindow.close();
-          });
-        });
-        setSelection(newShape);
-      }
+      newShape.type = e.type;
+      $this.featureEventsRegister(newShape);
+      setSelection(newShape);
     });
     
     function setSelection(shape) {
-        selectedShape = shape;
+      if (shape.type != "marker") {
         shape.setEditable(true);
       }
+    }
   }
 
   GmapInput.prototype.version = function() {
@@ -197,7 +187,9 @@
     if (feature == undefined) {
       var currentFeature = this._features.getCurrentFeature();
       if (currentFeature) {
-        currentFeature.setEditable(false);
+        if (currentFeature.type != "marker") {
+          currentFeature.setEditable(false);
+        }
         this._features.setCurrentFeature(null);
         $(this.element).val(JSON.stringify(this._features.getGeoJSON()));
       }
@@ -261,6 +253,69 @@
   GmapInput.prototype.mouseup = function (e, feature, featureType) {
     this.data.replaceCoordinate(e.latLng.lng(), e.latLng.lat(), e.featureID, feature.getFeatureID() - 1);
     $(this.element).val(this.data.stringify());
+  }
+  
+  // Register common events for a feature
+  GmapInput.prototype.featureEventsRegister = function(feature) {
+    var $this = this;
+    var featureType = feature.get('type');
+    if (featureType == 'polygon' || featureType == 'polyline') {
+      var path = feature.getPath();
+      google.maps.event.addListener(path, 'insert_at', function(index) {
+        var currentFeature = $this._features.getCurrentFeature();
+        $this._features.modifyFeature(currentFeature, currentFeature.get('fmPos'));
+      });
+    } else if (featureType == 'marker') {
+      google.maps.event.addListener(feature, 'dragend', function(e) {
+        var pos = this.get('fmPos');
+        $this._features.modifyFeature(this, pos);
+        $($this.element).val(JSON.stringify($this._features.getGeoJSON()));
+        $this._infoWindow.close();
+      });
+    }
+
+    google.maps.event.addListener(feature, 'click', function(e) {
+      $this._features.setCurrentFeature(this.get('fmPos'));
+      if (feature.get('type') != "marker") {
+        feature.setEditable(true);
+      }
+    });
+
+    google.maps.event.addListener(feature, 'dblclick', function(e) {
+      var localBounds = this.get("localBounds");
+      $this._infoWindow.setPosition(localBounds.getCenter());
+      $this._infoWindow.open($this._map);
+
+      // Set form elements in form window
+      var properties = this.get('geojsonProperties');
+      for (var i in properties) {
+        $('.' + i + '-input').val(properties[i]);
+      }
+      
+      // @TODO: change to limit to just our map, not globally
+      $('.deleteLink').click(function(event) {
+        event.preventDefault();
+        var current = $this._features.getCurrentFeature();
+        $this._features.removeFeatureAt(current.get('fmPos'));
+        $($this.element).val(JSON.stringify($this._features.getGeoJSON()));
+        $this._infoWindow.close();
+      });
+
+      // @TODO: change to limit to just our map, not globally
+      $('.map-property-form').submit(function() {
+        var current = $this._features.getCurrentFeature();
+        var properties = {};
+        for (var i in $this.options.properties) {
+          properties[i] = $('.' + i + "-input").val();
+        }
+        current.set('geojsonProperties', properties);
+        $this._features.modifyFeature(current, current.get('fmPos'));
+        $this._infoWindow.close();
+        $($this.element).val(JSON.stringify($this._features.getGeoJSON()));
+        return false;
+      });
+      // end @TODO
+    });
   }
 
   // A really lightweight plugin wrapper around the constructor,
