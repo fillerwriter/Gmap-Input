@@ -12,7 +12,23 @@
 <script type="text/javascript" src="../src/GmapInput.js"></script>
 <script type="text/javascript">
   $(document).ready(function(){
-    $('.wkt').gmapInput({});
+    $('.wkt').gmapInput({
+      widgetOptions: [
+        google.maps.drawing.OverlayType.MARKER,
+        google.maps.drawing.OverlayType.POLYLINE,
+        google.maps.drawing.OverlayType.POLYGON
+      ],
+      mapOptions: {
+        mapTypeId: google.maps.MapTypeId.HYBRID
+      }
+    });
+    var map = $('.wkt').data('gmapInput').getMap();
+    /*var center = map.getCenter();
+    var infowindow = new google.maps.InfoWindow({
+      content: "HI",
+      position: center
+    });
+    infowindow.open(map);*/
   });
 </script>
 <style type="text/css">

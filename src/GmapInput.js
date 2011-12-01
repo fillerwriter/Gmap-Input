@@ -40,17 +40,16 @@
         properties: {}, // Key/Value pairs to save for each item.
         imagePath: 'img',
         featureMaxCount: FEATURE_COUNT_UNLIMITED,
-        widgetOptions: {},
-        defaultWidgetOption: 'dummy', // @TODO: Use DrawManager constants.
+        widgetOptions: [
+          google.maps.drawing.OverlayType.MARKER,
+          google.maps.drawing.OverlayType.POLYLINE,
+          google.maps.drawing.OverlayType.POLYGON
+        ],
+        defaultWidgetOption: null,
         mapOptions: {
           mapTypeId: google.maps.MapTypeId.ROADMAP
         }
       };
-  // @TODO: Use DrawManager constants.
-  /*defaults.widgetOptions[GMAP_WIDGET_OPTION_POINT] = 'Draw Point';
-  defaults.widgetOptions[GMAP_WIDGET_OPTION_LINE] = 'Draw Line';
-  defaults.widgetOptions[GMAP_WIDGET_OPTION_POLY] = 'Draw Polygon';
-  defaults.widgetOptions[GMAP_WIDGET_OPTION_BOUNDS] = 'Draw Bounds';*/
 
   // The actual plugin constructor
   function GmapInput( element, options ) {
@@ -71,6 +70,7 @@
     this._drawManager = null; // google.maps.drawing.DrawManager
     this._dblClickTimer = null; // Timer object
     this._features = null; // FeatureManager object
+    this._infoWindow = null // google.maps.InfoWindow
 
     this.init();
   }
@@ -78,7 +78,6 @@
   GmapInput.prototype.init = function () {
     var $this = this;
     this.options.mapState = MAP_STATE_PANNING;
-    this.options.currentFeatureType = 'dummy'; // @TODO: replace with google constant.
     this._dblClickTimer = undefined;
 
     this._mapcontainer = $(this.element).after('<div class="gmapInputMap"></div>').siblings('.gmapInputMap').get(0);
@@ -107,11 +106,7 @@
     this._drawManager = new google.maps.drawing.DrawingManager({
       map: this._map,
       drawingControlOptions: {
-        drawingModes: [
-          google.maps.drawing.OverlayType.MARKER,
-          google.maps.drawing.OverlayType.POLYLINE,
-          google.maps.drawing.OverlayType.POLYGON
-        ],
+        drawingModes: this.options.widgetOptions,
         position: google.maps.ControlPosition.TOP_LEFT
       },
       markerOptions: {
@@ -120,6 +115,10 @@
       polylineOptions: {
         editable: true
       }
+    });
+
+    this._infoWindow = new google.maps.InfoWindow({
+      content: "<p><a class='deleteLink' href='#'>Delete</a></p>",
     });
 
     // Set up our global listeners
@@ -147,26 +146,26 @@
             $this._features.modifyFeature(currentFeature, currentFeature.get('fmPos'));
           });
         }
-        
-        google.maps.event.addListener(newShape, 'click', function() {
+
+        google.maps.event.addListener(newShape, 'click', function(e) {
           $this._features.setCurrentFeature(newShape.get('fmPos'));
           setSelection(newShape);
         });
-        
-        // TMP: For AFF.
-        /*google.maps.event.addListener(newShape, 'dblclick', function() {
-          var infowindow = new google.maps.InfoWindow({
-            content: "<p>Test</p>"
-          });
+
+        google.maps.event.addListener(newShape, 'dblclick', function(e) {
           var localBounds = this.get("localBounds");
-          if (localBounds) {
-            infowindow.open($this._map, localBounds.getCenter()); 
-          }
-          alert("HI");
-        });*/
-        
-        // END TMP.
-        
+          $this._infoWindow.setPosition(localBounds.getCenter());
+          
+          $this._infoWindow.open($this._map);
+          // @TODO: Move to a better place architecturally.
+          $('.deleteLink').click(function(event) {
+            event.preventDefault();
+            var current = $this._features.getCurrentFeature();
+            $this._features.removeFeatureAt(current.get('fmPos'));
+            $($this.element).val(JSON.stringify($this._features.getGeoJSON()));
+            $this._infoWindow.close();
+          });
+        });
         setSelection(newShape);
       }
     });
@@ -268,8 +267,8 @@
   // preventing against multiple instantiations
   $.fn[pluginName] = function ( options ) {
     return this.each(function () {
-      if (!$.data(this, 'plugin_' + pluginName)) {
-        $.data(this, 'plugin_' + pluginName,
+      if (!$.data(this, pluginName)) {
+        $.data(this, pluginName,
         new GmapInput( this, options ));
       }
     });
