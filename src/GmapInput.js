@@ -137,7 +137,7 @@
     infoContent += "<p><a class='deleteLink' href='#'>Delete</a></p>";
 
     this._infoWindow = new google.maps.InfoWindow({
-      content: infoContent,
+      content: infoContent
     });
 
     // Set up our global listeners
