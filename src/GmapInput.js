@@ -177,6 +177,11 @@
     return this._map;
   }
 
+  // Returns map object.
+  GmapInput.prototype.getDrawManager = function () {
+    return this._drawManager;
+  }
+
   // General click callback.
   GmapInput.prototype.click = function (e, feature, featureType) {
     var $this = this;
