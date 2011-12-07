@@ -145,10 +145,18 @@
       $this.click(e);
     });
 
+    google.maps.event.addListener(this._infoWindow, 'closeclick', function(e) {
+      var currentFeature = $this._features.getCurrentFeature();
+      if (!currentFeature.getPos) {
+        currentFeature.setEditable(false);
+      }
+      $this._features.setCurrentFeature(undefined);
+    });
+
     google.maps.event.addListener(this._drawManager, 'overlaycomplete', function(e) {
       var newShape = e.overlay;
 
-      // validation
+      // Validation
       if (e.type == google.maps.drawing.OverlayType.POLYGON) {
         var path = newShape.getPath();
         if (path.getLength() < 2) {
@@ -156,11 +164,17 @@
           return;
         }
       }
-      
-      //
+
+      // At this point, we're good to go.
       if ($this.options.properties) {
         newShape.set('geojsonProperties', $this.options.properties);
       }
+
+      // Special case, if we set feature max to 1, drop all properties, add current one.
+      if ($this.options.featureMaxCount == 1 && $this._features.getLength() > 0) {
+        $this._features.removeAllFeatures();
+      }
+
       $this._features.addFeature(newShape);
       $($this.element).val(JSON.stringify($this._features.getGeoJSON()));
 
@@ -170,8 +184,12 @@
       newShape.type = e.type;
       $this.featureEventsRegister(newShape);
       setSelection(newShape);
+
+      if ($this.options.properties != undefined) {
+        $this._openInfoWindow(newShape);
+      }
     });
-    
+
     function setSelection(shape) {
       if (shape.type != "marker") {
         shape.setEditable(true);
@@ -224,12 +242,48 @@
     
   }
 
-  // General mouseup callback.
-  GmapInput.prototype.mouseup = function (e, feature, featureType) {
-    this.data.replaceCoordinate(e.latLng.lng(), e.latLng.lat(), e.featureID, feature.getFeatureID() - 1);
-    $(this.element).val(this.data.stringify());
+  // Opens an infowindow on current feature.
+  GmapInput.prototype._openInfoWindow = function(feature) {
+    var $this = this;
+    if (feature == undefined) {
+      feature = $this._feature.getCurrentFeature();
+    }
+    
+    var localBounds = feature.get("localBounds");
+    $this._infoWindow.setPosition(localBounds.getCenter());
+    $this._infoWindow.open($this._map);
+
+    // Set form elements in form window
+    var properties = feature.get('geojsonProperties');
+    for (var i in properties) {
+      $('.' + i + '-input').val(properties[i]);
+    }
+    
+    // @TODO: change to limit to just our map, not globally
+    $('.deleteLink').click(function(event) {
+      event.preventDefault();
+      var current = $this._features.getCurrentFeature();
+      $this._features.removeFeatureAt(current.get('fmPos'));
+      $($this.element).val(JSON.stringify($this._features.getGeoJSON()));
+      $this._infoWindow.close();
+    });
+
+    // @TODO: change to limit to just our map, not globally
+    $('.map-property-form').submit(function() {
+      var current = $this._features.getCurrentFeature();
+      var properties = {};
+      for (var i in $this.options.properties) {
+        properties[i] = $('.' + i + "-input").val();
+      }
+      current.set('geojsonProperties', properties);
+      $this._features.modifyFeature(current, current.get('fmPos'));
+      $this._infoWindow.close();
+      $($this.element).val(JSON.stringify($this._features.getGeoJSON()));
+      return false;
+    });
+    // end @TODO
   }
-  
+
   // Register common events for a feature
   GmapInput.prototype.featureEventsRegister = function(feature) {
     var $this = this;
@@ -257,39 +311,7 @@
     });
 
     google.maps.event.addListener(feature, 'dblclick', function(e) {
-      var localBounds = this.get("localBounds");
-      $this._infoWindow.setPosition(localBounds.getCenter());
-      $this._infoWindow.open($this._map);
-
-      // Set form elements in form window
-      var properties = this.get('geojsonProperties');
-      for (var i in properties) {
-        $('.' + i + '-input').val(properties[i]);
-      }
-      
-      // @TODO: change to limit to just our map, not globally
-      $('.deleteLink').click(function(event) {
-        event.preventDefault();
-        var current = $this._features.getCurrentFeature();
-        $this._features.removeFeatureAt(current.get('fmPos'));
-        $($this.element).val(JSON.stringify($this._features.getGeoJSON()));
-        $this._infoWindow.close();
-      });
-
-      // @TODO: change to limit to just our map, not globally
-      $('.map-property-form').submit(function() {
-        var current = $this._features.getCurrentFeature();
-        var properties = {};
-        for (var i in $this.options.properties) {
-          properties[i] = $('.' + i + "-input").val();
-        }
-        current.set('geojsonProperties', properties);
-        $this._features.modifyFeature(current, current.get('fmPos'));
-        $this._infoWindow.close();
-        $($this.element).val(JSON.stringify($this._features.getGeoJSON()));
-        return false;
-      });
-      // end @TODO
+      $this._openInfoWindow(feature);
     });
   }
 

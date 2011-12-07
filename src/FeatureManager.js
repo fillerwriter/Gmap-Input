@@ -125,9 +125,10 @@ FeatureManager.prototype.removeFeatureAt = function(featureID) {
 }
 
 FeatureManager.prototype.removeAllFeatures = function() {
-  for (var i in this._features) {
-    this._features[i].setMap(null);
-  }
+  this._features.forEach(function(element, i) {
+    element.setMap(null);
+  });
+
   this._features = new google.maps.MVCArray();
   this._currentFeatureID = undefined;
 }
