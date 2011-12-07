@@ -147,6 +147,17 @@
 
     google.maps.event.addListener(this._drawManager, 'overlaycomplete', function(e) {
       var newShape = e.overlay;
+
+      // validation
+      if (e.type == google.maps.drawing.OverlayType.POLYGON) {
+        var path = newShape.getPath();
+        if (path.getLength() < 2) {
+          newShape.setMap(null);
+          return;
+        }
+      }
+      
+      //
       if ($this.options.properties) {
         newShape.set('geojsonProperties', $this.options.properties);
       }
@@ -201,49 +212,6 @@
         $(this.element).val(JSON.stringify(this._features.getGeoJSON()));
       }
     }
-    /*var currentFeature = this._features.getCurrentFeature();
-    if (this.options.mapState == MAP_STATE_DRAWING) {
-      switch (this.options.currentFeatureType) {
-        case DRAW_POINT:
-          this.drawPoint(new Array(e.latLng.lng(), e.latLng.lat()));
-        break;
-        case DRAW_LINE:
-          if (currentFeature == undefined) {
-            this.drawLine(new Array(new Array(e.latLng.lng(), e.latLng.lat())));
-          } else {
-            this.appendPoint(new Array(e.latLng.lng(), e.latLng.lat()));
-          }
-        break;
-        case DRAW_POLY:
-          if (currentFeature == undefined) {
-            this.drawPolygon(new Array(new Array(e.latLng.lng(), e.latLng.lat())));
-          } else {
-            this.appendPoint(new Array(e.latLng.lng(), e.latLng.lat()));
-          }
-        break;
-        case DRAW_BOUNDS:
-          // @TODO: Add bounds response. But not here, in a mouse down/up callback. Bleh...
-        break;
-      }
-    } else {
-      if (feature != undefined) {
-        // Panning mode + a polygon == select a polygon.
-        var currentFeature = this._features.getCurrentFeature();
-        if (currentFeature != undefined) {
-          currentFeature.setEditState(GMAP_EDIT_STATE_STATIC);
-        }
-        this._features.setCurrentFeature(feature.getFeatureID());
-        this.options.currentFeatureType = featureType;
-        feature.setEditState(GMAP_EDIT_STATE_EDIT);
-      } else {
-        // Panning mode + no polygon == deselect polygon
-        var currentFeature = this._features.getCurrentFeature();
-        if (currentFeature != undefined) {
-          currentFeature.setEditState(GMAP_EDIT_STATE_STATIC);
-        }
-        this._features.setCurrentFeature(null);
-      }
-    }*/
   }
 
   // General doubleclick callback.
