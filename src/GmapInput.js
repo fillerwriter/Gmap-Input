@@ -147,7 +147,7 @@
 
     google.maps.event.addListener(this._infoWindow, 'closeclick', function(e) {
       var currentFeature = $this._features.getCurrentFeature();
-      if (!currentFeature.getPos) {
+      if (!currentFeature.getPos && currentFeature.setEditable) {
         currentFeature.setEditable(false);
       }
       $this._features.setCurrentFeature(undefined);
@@ -295,6 +295,7 @@
         $this._features.modifyFeature(currentFeature, currentFeature.get('fmPos'));
       });
     } else if (featureType == 'marker') {
+      feature.setDraggable(true);
       google.maps.event.addListener(feature, 'dragend', function(e) {
         var pos = this.get('fmPos');
         $this._features.modifyFeature(this, pos);
@@ -311,6 +312,7 @@
     });
 
     google.maps.event.addListener(feature, 'dblclick', function(e) {
+      $this._features.setCurrentFeature(this.get('fmPos'));
       $this._openInfoWindow(feature);
     });
   }
