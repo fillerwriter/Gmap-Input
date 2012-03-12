@@ -18,12 +18,19 @@
         google.maps.drawing.OverlayType.POLYLINE,
         google.maps.drawing.OverlayType.POLYGON
       ],
+      properties: {
+        title: '',
+        description: ''
+      },
       forceGeoCollection: false,
       mapOptions: {
         mapTypeId: google.maps.MapTypeId.HYBRID
       }
     });
     var map = $('.wkt').data('gmapInput').getMap();
+    var features = $('.wkt').data('gmapInput').getFeatureManager();
+    $(features).bind('delete', function() {
+    });
     /*var center = map.getCenter();
     var infowindow = new google.maps.InfoWindow({
       content: "HI",
@@ -41,7 +48,7 @@
 </head>
 <body class="test">
   <form>
-    <textarea class="wkt" style="width: 500px; height: 200px;">{"type":"Point","coordinates":[-87.74518260937498,41.93676844222949]}</textarea>
+    <textarea class="wkt" style="width: 500px; height: 200px;">{ "type": "GeometryCollection", "geometries": [{"type":"Polygon","coordinates":[[[-86.177153161,41.6730001563],[-86.1771317033,41.672896977],[-86.177320799,41.6728959752],[-86.1773194579,41.6729921424]]], "properties":{"node":"126","title":"Front Office","description":"Front office area."}}, {"type":"Point","coordinates":[-86.1771679131,41.6728428829], "properties":{"node":"128","title":"Brandon's Office","description":"Where I work."}}, {"type":"Polygon","coordinates":[[[-86.1774495451,41.6730151824],[-86.1775608567,41.6730131789],[-86.177551469,41.6729500692],[-86.1774669794,41.672951071],[-86.1774508862,41.6729721075]]], "properties":{"node":"130","title":"Stand 4","description":""}}, {"type":"LineString","coordinates":[[-86.1772550849,41.6727156614],[-86.1772644726,41.6727797731],[-86.1772228984,41.6727897905],[-86.1772202162,41.6728559055],[-86.1771719364,41.6728589108]], "properties":{"node":"127","title":"Path to my office","description":"It's not too bad"}}] }</textarea>
   </form>
 </body>
 </html>

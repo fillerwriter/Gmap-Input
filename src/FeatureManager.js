@@ -52,7 +52,8 @@ FeatureManager.prototype.init = function() {
     } else {
       if (jQuery.isArray(rawData)) {
         for (var i in rawData) {
-          this.addFeature(rawData[i]);
+          var feature = rawData[i];
+          this.addFeature(feature);
         }
       } else {
         this.addFeature(rawData);
@@ -122,11 +123,13 @@ FeatureManager.prototype.removeFeatureAt = function(featureID) {
   var feature = this._features.getAt(featureID);
   feature.setMap(null);
   this._features.removeAt(featureID);
+  jQuery(this).trigger('delete');
 }
 
 FeatureManager.prototype.removeAllFeatures = function() {
   this._features.forEach(function(element, i) {
     element.setMap(null);
+    jQuery(this).trigger('delete');
   });
 
   this._features = new google.maps.MVCArray();

@@ -210,6 +210,10 @@
   GmapInput.prototype.getDrawManager = function () {
     return this._drawManager;
   }
+  
+  GmapInput.prototype.getFeatureManager = function() {
+    return this._features;
+  }
 
   // General click callback.
   GmapInput.prototype.click = function (e, feature, featureType) {
