@@ -117,12 +117,24 @@
       
       for (var i = 0; i < initialFeatureCount; i++) {
         var feature = this._features.getFeatureAt(i);
+        // @TODO: add default options here.
+        var featureType = feature.get('type');
+        switch (featureType) {
+          case 'polygon':
+            feature.setOptions(this.options.featureDefaults.polygon);
+          break;
+          case 'polyline':
+            feature.setOptions(this.options.featureDefaults.polyline);
+          break;
+          case 'marker':
+            feature.setOptions(this.options.featureDefaults.marker);
+          break;
+        }
         this.featureEventsRegister(feature);
       }
       
     }
 
-    // @TODO: Use options passed in from settings/defaults.
     var markerOptions = $.extend({draggable: true}, this.options.featureDefaults.marker);
     var polylineOptions = $.extend({draggable: true}, this.options.featureDefaults.polyLine);
     var polygonOptions = $.extend({draggable: true}, this.options.featureDefaults.polygon);
