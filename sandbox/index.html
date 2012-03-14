@@ -25,6 +25,11 @@
       forceGeoCollection: false,
       mapOptions: {
         mapTypeId: google.maps.MapTypeId.HYBRID
+      },
+      featureDefaults: {
+        polygon: {
+          fillColor: '#FF0000'
+        }
       }
     });
     var map = $('.wkt').data('gmapInput').getMap();

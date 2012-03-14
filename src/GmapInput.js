@@ -37,6 +37,17 @@
           'lon': -87.624333,
           'zoom': 7
         },
+        featureDefaults: {
+          marker: {
+          
+          },
+          polyLine: {
+          
+          },
+          polygon: {
+          
+          }
+        },
         properties: undefined, // Key/Value pairs to save for each item.
         imagePath: 'img',
         featureMaxCount: FEATURE_COUNT_UNLIMITED,
@@ -112,18 +123,18 @@
     }
 
     // @TODO: Use options passed in from settings/defaults.
+    var markerOptions = $.extend({draggable: true}, this.options.featureDefaults.marker);
+    var polylineOptions = $.extend({draggable: true}, this.options.featureDefaults.polyLine);
+    var polygonOptions = $.extend({draggable: true}, this.options.featureDefaults.polygon);
     this._drawManager = new google.maps.drawing.DrawingManager({
       map: this._map,
       drawingControlOptions: {
         drawingModes: this.options.widgetOptions,
         position: google.maps.ControlPosition.TOP_LEFT
       },
-      markerOptions: {
-        draggable: true
-      },
-      polylineOptions: {
-        editable: true
-      }
+      markerOptions: markerOptions,
+      polylineOptions: polylineOptions,
+      polygonOptions: polygonOptions
     });
 
     var infoContent = "";
